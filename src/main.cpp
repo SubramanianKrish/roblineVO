@@ -4,7 +4,7 @@ This runs the full visual odometry system.
 
 Changelog:
     awadhut - 10/02 - Initial commit
-    subbu   - 10/02 - added dummies for frame testing
+    subbu   - 10/02 - subbu - 10/02 - Adding Eigen, camera plotter 3D toy 
 */
 
 // C++ Standard headers
