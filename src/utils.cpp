@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "Utils.h"
+#include "utils.h"
 
 cv::Mat ReadImage(std::string image_path){
     cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);

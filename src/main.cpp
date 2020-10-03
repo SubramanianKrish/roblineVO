@@ -30,7 +30,7 @@ int main()
   std::cout << m << std::endl;
 
   im1 = ReadImage("../data/test.jpg");
-  Frame test_frame(image);
+  Frame test_frame(im1);
 
   DrawLine(im1, 2, 2, 200, 200);
   DisplayImage(im1);

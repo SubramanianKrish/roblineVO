@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 # Create any folders if not present
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Make the library directory (Can hold .so or static lib files)
+# Make the library directory (Can hold .so or .a files)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 # Include OpenCV and Eigen
@@ -43,4 +43,4 @@ target_link_libraries(
 
 # Add main executable file
 add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-# target_link_libraries(main PUBLIC utils ${OpenCV_LIBS} ${EIGEN3_LIBS})
+target_link_libraries(main PUBLIC ${PROJECT_NAME})
