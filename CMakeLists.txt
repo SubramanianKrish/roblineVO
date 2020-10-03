@@ -6,7 +6,7 @@ message(FATAL_ERROR "Do not build in-source. Please remove CMakeCache.txt and th
 endif()
 
 # Specify project name and description
-project(GeovisProject)
+project(roblineVO)
 
 # Set C++ Standard
 set(CMAKE_CXX_STANDARD 11)
