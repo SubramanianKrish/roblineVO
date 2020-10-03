@@ -1,55 +1,23 @@
-#include <iostream>
-#include <pangolin/pangolin.h>
-
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+
+#include <iostream>
+
+#include "utils.h"
 
 using namespace std;
 using namespace pangolin;
 
-// Code reference: https://github.com/uoip/pangolin/blob/master/python/contrib.hpp
-void DrawCamera(cv::Mat camera, float w=1.0, float h_ratio=0.75, float z_ratio=0.6) {
-    float h = w * h_ratio;
-    float z = w * z_ratio;
-
-    glPushMatrix();
-    // glMultMatrixd(r.data(0, 0));
-    // glMultTransposeMatrixd(r.data(0, 0));
-
-    glBegin(GL_LINES);
-    glVertex3f(0,0,0);
-    glVertex3f(w,h,z);
-    glVertex3f(0,0,0);
-    glVertex3f(w,-h,z);
-    glVertex3f(0,0,0);
-    glVertex3f(-w,-h,z);
-    glVertex3f(0,0,0);
-    glVertex3f(-w,h,z);
-
-    glVertex3f(w,h,z);
-    glVertex3f(w,-h,z);
-
-    glVertex3f(-w,h,z);
-    glVertex3f(-w,-h,z);
-
-    glVertex3f(-w,h,z);
-    glVertex3f(w,h,z);
-
-    glVertex3f(-w,-h,z);
-    glVertex3f(w,-h,z);
-    glEnd();
-
-    glPopMatrix();
-}
-
 int main(){
     cout << "testing 3D viewer" << endl;
 
-    // Needs to have 16 entries which would 
+    // Needs to have 16 entries which would make up the Transformation matrix
     float camera_pose_array[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-    cv::Mat camera_pose = cv::Mat(4, 4, CV_32F, camera_pose_array);
-    cout << camera_pose.rows << " " << camera_pose.cols << endl;
-
+    float camera_pose_trans_array[16] = {0.7071068, 0, 0.7071068, 0, 0, 1, 0, 0, -0.7071068, 0,  0.7071068, 0, 0, 0, 0, 1};
+    
+    cv::Mat camera_pose_origin = cv::Mat(4, 4, CV_32F, camera_pose_array);
+    cv::Mat camera_pose_translated = cv::Mat(4, 4, CV_32F, camera_pose_trans_array);
+    
     pangolin::CreateWindowAndBind("Main",640,480);
     glEnable(GL_DEPTH_TEST);
 
@@ -71,8 +39,9 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         d_cam.Activate(s_cam);
 
-        // Render OpenGL Cube
-        DrawCamera(camera_pose);
+        // Draw test camera
+        DrawSingleCamera(camera_pose_origin);
+        DrawSingleCamera(camera_pose_translated);
 
         // Swap frames and Process Events
         pangolin::FinishFrame();

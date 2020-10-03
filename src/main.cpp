@@ -33,7 +33,8 @@ int main()
   Frame test_frame(im1);
 
   DrawLine(im1, 2, 2, 200, 200);
-  DisplayImage(im1);
+  // DisplayImage(im1);
+  DisplayDualImage(im1, im1);
   
   return 0;
 }
