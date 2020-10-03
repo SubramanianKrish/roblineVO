@@ -31,10 +31,3 @@
 *.out
 *.app
 
-# Don't track the build dir
-build/
-.vscode/
-lib/
-bin/
-
-
