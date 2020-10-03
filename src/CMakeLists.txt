@@ -19,7 +19,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 
 # Create a static library (compiled and linked completely)
-add_library(Utils STATIC ${CMAKE_SOURCE_DIR}/src/Utils.cpp)
+add_library(utils STATIC ${CMAKE_SOURCE_DIR}/src/utils.cpp)
 
 
 # Include OpenCV and Eigen
@@ -30,6 +30,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
 # Add main executable file
-add_executable(Main ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp)
+add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
-target_link_libraries(Main PUBLIC Utils ${OpenCV_LIBS} ${EIGEN3_LIBS})
+target_link_libraries(main PUBLIC utils ${OpenCV_LIBS} ${EIGEN3_LIBS})
