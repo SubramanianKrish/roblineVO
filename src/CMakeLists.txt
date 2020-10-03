@@ -11,25 +11,36 @@ set(CMAKE_CXX_STANDARD 11)
 # Create any folders if not present
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-
+# Make the library directory (Can hold .so or static lib files)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-# Add libraries
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
-
-# Create a static library (compiled and linked completely)
-add_library(utils STATIC ${CMAKE_SOURCE_DIR}/src/utils.cpp)
-
-
 # Include OpenCV and Eigen
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3.0 QUIET)
+if(NOT OpenCV_FOUND)
+    message(FATAL_ERROR "OpenCV > 3.0 is not found. Please check readme")
+endif()
 find_package(Eigen3 REQUIRED)
 
-include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${EIGEN3_INCLUDE_DIRS})
+# Add libraries - tells CMake to look for headers here when compiling
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    )
+
+# Create a static library (compiled and linked completely -> One big executable)
+add_library(${PROJECT_NAME} STATIC 
+    ${CMAKE_SOURCE_DIR}/src/utils.cpp
+    ${CMAKE_SOURCE_DIR}/src/frame.cpp
+    )
+
+# Link external libraries (opencv, eigen and our custom library)
+target_link_libraries(
+    ${PROJECT_NAME}
+    ${OpenCV_LIBS}
+    ${EIGEN3_LIBS}
+    )
 
 # Add main executable file
 add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-
-target_link_libraries(main PUBLIC utils ${OpenCV_LIBS} ${EIGEN3_LIBS})
+# target_link_libraries(main PUBLIC utils ${OpenCV_LIBS} ${EIGEN3_LIBS})
