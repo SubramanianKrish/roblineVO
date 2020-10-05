@@ -20,7 +20,7 @@ using Eigen::MatrixXd;
 int main()
 {
   std::cout << "Starting system now .." << std::endl;
-
+  
   cv::Mat im1;
   MatrixXd m(2,2);
   m(0,0) = 3;
