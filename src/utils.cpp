@@ -13,7 +13,7 @@ void DisplayImage(cv::Mat img){
     }
     cv::namedWindow("Display Image");
     cv::imshow("Display Image", img);
-    cv::waitKey(0);
+    // cv::waitKey(0);
 }
 
 cv::Mat GetEdgeImage(cv::Mat& img, int lowThreshold = 50, int highThreshold = 150, int kernel_size = 3, bool enable_blur = false){
