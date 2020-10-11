@@ -10,7 +10,11 @@ Changelog:
 
 #include <opencv2/opencv.hpp>
 #include <pangolin/pangolin.h>
-#include <vector> 
+
+#include <Eigen/Dense>
+#include <vector>
+#include <cmath>
+
 // Read in an image
 cv::Mat ReadImage(std::string image_path);
 
@@ -37,3 +41,6 @@ cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP);
 std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
 
 void drawCoordinates();
+// This doesn't belong here. <TODO> refactor later into a separate line class
+std::vector<std::vector<int>> SampleIndices(const std::vector<std::vector<int>>& lines, const int& height, const int& width);
+

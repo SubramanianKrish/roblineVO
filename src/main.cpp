@@ -65,10 +65,26 @@ int main(int argc, char* argv[])
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
     cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
-    cv::Mat depth_img = ReadImage(data_dir + depth_path);
+    // cv::Mat depth_img = ReadImage(data_dir + depth_path);
     
-    DisplayDualImage(rgb_img, depth_img);
-    cv::waitKey(10);
+    // DisplayDualImage(rgb_img, depth_img);
+    // cv::waitKey(10);
+
+    int nrows = 10;
+    int ncols = 4;
+    int nlines = 15;
+    Eigen::MatrixXd random_values = Eigen::MatrixXd::Random(nrows, ncols);
+    
+    // height -> 480; width -> 640
+    vector<int> line_vec{0,0,20,40};
+    vector<vector<int>> lines{line_vec};
+    vector<vector<int>> sampled_indices;
+    sampled_indices = SampleIndices(lines, 640, 480);
+    for (auto index: sampled_indices){
+      cout << index[0] << " " << index[1] << endl;
+    }
+
+    break;
   }
 
   // close file

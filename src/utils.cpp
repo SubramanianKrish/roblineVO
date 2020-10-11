@@ -1,3 +1,7 @@
+#include <vector>
+#include <Eigen/Dense>
+#include <cmath>
+
 #include "utils.h"
 
 cv::Mat ReadImage(std::string image_path){
@@ -167,4 +171,50 @@ void DrawPoints(std::vector<cv::Point3d> points, std::vector<double> color, floa
         glVertex3d(x, y, z);
     }
     glEnd();
+}
+
+std::vector<std::vector<int>> SampleIndices(const std::vector<std::vector<int>>& lines, const int& ht, const int& wd){
+    /*
+    Input: lines vector expected to be of form nx4 with each entry being [x1,y1,x2,y2] 
+    where x_i, y_i denote the end points of the lines
+    */
+    for(auto& line: lines){
+        Eigen::Vector2f p1(line[0], line[1]), p2(line[2], line[3]);
+        float dist = (p1-p2).norm();
+        float n_samples = std::min(100, int(dist));
+
+        // ref: https://stackoverflow.com/questions/28018147/emgucv-get-coordinates-of-pixels-in-a-line-between-two-points
+        int x0 = line[0], y0 = line[1], x1 = line[2], y1 = line[3];
+        int dx = std::abs(x1- x0), dy = std::abs(y1-y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        std::vector<std::vector<int>> points;
+
+        std::vector<int> my_point{30,20};
+        points.push_back(my_point);
+
+        if (n_samples < 100){
+            // Bresenham's algorithm
+            while(true){
+                std::vector<int> point{x0,y0};
+                points.push_back(point);
+
+                if(x0 == x1 && y0 == y1) break;
+                int e2 = 2*err;
+                if(e2 > -dy){
+                    err = err - dy;
+                    x0 = x0 + sx;
+                }
+                if(e2 < dx){
+                    err = err + dx;
+                    y0 = y0 + sy;
+                }
+            }
+        }
+        else{
+            // Do something else :/
+        }
+        return points;
+    }
 }
