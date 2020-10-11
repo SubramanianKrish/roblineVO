@@ -68,3 +68,75 @@ void DisplayDualImage(const cv::Mat& im1, const cv::Mat& im2){
     cv::hconcat(im1, im2, concatenated_image);
     DisplayImage(concatenated_image);
 }
+
+void DrawLines(std::vector<std::vector<cv::Point3d>> lines) {
+    glBegin(GL_LINES);
+    for (auto it = lines.begin(); it != lines.end(); it++) {
+        double x1 = (*it)[0].x, y1 = (*it)[0].y, z1 = (*it)[0].z;
+        double x2 = (*it)[1].x, y2 = (*it)[1].y, z2 = (*it)[1].z;
+        glVertex3d(x1, y1, z1);
+        glVertex3d(x2, y2, z2);
+    }
+    glEnd();
+}
+
+void drawCoordinates(){
+ 
+    // draw some lines
+    glColor3f(1.0,0.0,0.0); // red x
+    glBegin(GL_LINES);
+    // x aix
+ 
+    glVertex3f(0.0, 0.0f, 0.0f);
+    glVertex3f(3.0, 0.0f, 0.0f);
+ 
+    glVertex3f(3.0, 0.0f, 0.0f);
+    glVertex3f(2.0, 1.0f, 0.0f);
+ 
+    glVertex3f(3.0, 0.0f, 0.0f);
+    glVertex3f(2.0, -1.0f, 0.0f);
+    glEnd();
+ 
+    // y 
+    glColor3f(0.0,1.0,0.0); // green y
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0f, 0.0f);
+    glVertex3f(0.0, 3.0f, 0.0f);
+ 
+    glVertex3f(0.0, 3.0f, 0.0f);
+    glVertex3f(1.0, 2.0f, 0.0f);
+ 
+    glVertex3f(0.0, 3.0f, 0.0f);
+    glVertex3f(-1.0, 2.0f, 0.0f);
+    glEnd();
+ 
+    // z 
+    glColor3f(0.0,0.0,1.0); // blue z
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0f ,0.0f );
+    glVertex3f(0.0, 0.0f ,3.0f );
+ 
+ 
+    glVertex3f(0.0, 0.0f ,3.0f );
+    glVertex3f(0.0, 1.0f ,2.0f );
+ 
+    glVertex3f(0.0, 0.0f ,3.0f );
+    glVertex3f(0.0, -1.0f ,2.0f );
+
+    glColor3f(1.0,1.0,1.0);
+    glEnd();
+ 
+}
+
+void DrawPoints(std::vector<cv::Point3d> points, std::vector<double> color, float point_size = 0) {
+    if(point_size > 0) {
+        glPointSize(point_size);
+    }
+    glBegin(GL_POINTS);
+    glColor3f(color[0], color[1], color[2]);
+    for (auto it = points.begin(); it != points.end(); it++){
+        double x = (*it).x, y = (*it).y, z = (*it).z;
+        glVertex3d(x, y, z);
+    }
+    glEnd();
+}

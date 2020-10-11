@@ -39,10 +39,18 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         d_cam.Activate(s_cam);
 
+        drawCoordinates();
         // Draw test camera
         DrawSingleCamera(camera_pose_origin);
-        DrawSingleCamera(camera_pose_translated);
+        // DrawSingleCamera(camera_pose_translated);
 
+        // Testing 3D line plot
+        cv::Point3d x = cv::Point3d(1.0, 1.0, 1.0);
+        cv::Point3d y = cv::Point3d(-1.0, -1.0, -1.0);
+        std::vector<std::vector<cv::Point3d>> lines = {{x,y}};
+        std::vector<cv::Point3d> points = {x,y};
+        // DrawLines(lines);
+        DrawPoints(points, {1.0, 1.0, 0.0}, 3);
         // Swap frames and Process Events
         pangolin::FinishFrame();
     }
