@@ -191,9 +191,6 @@ std::vector<std::vector<int>> SampleIndices(const std::vector<std::vector<int>>&
         int err = dx - dy;
         std::vector<std::vector<int>> points;
 
-        std::vector<int> my_point{30,20};
-        points.push_back(my_point);
-
         if (n_samples < 100){
             // Bresenham's algorithm
             while(true){
