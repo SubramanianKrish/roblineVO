@@ -16,6 +16,34 @@ void DisplayImage(cv::Mat img){
     cv::waitKey(0);
 }
 
+cv::Mat GetEdgeImage(cv::Mat& img, int lowThreshold = 50, int highThreshold = 150, int kernel_size = 3, bool enable_blur = false){
+    cv::Mat smooth_image, gray_image, edge_image;
+    if (enable_blur){
+        cv::blur(img, smooth_image, cv::Size(5, 5), cv::Point(-1,-1) );
+    }
+    else{
+        smooth_image = img;
+    }
+    cv::cvtColor(smooth_image, gray_image, cv::COLOR_BGR2GRAY);
+    cv::Canny(gray_image, edge_image, lowThreshold, highThreshold, kernel_size);
+    return edge_image;
+}
+
+std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh = 50, int minLen = 50, int maxGap = 10){
+    std::vector<cv::Vec4i> linesP;
+    cv::HoughLinesP(edge_image, linesP, 1, CV_PI/180, thresh, minLen, maxGap);
+    return linesP;
+}
+
+cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP){
+    for( size_t i = 0; i < linesP.size(); i++ )
+    {
+        cv::Vec4i l = linesP[i];
+        line( img, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, cv::LINE_AA);
+    }
+    return img;
+}
+
 void DrawLine(cv::Mat img, int x1, int y1, int x2, int y2){
     cv::Point start = cv::Point(x1, y1);
     cv::Point end = cv::Point(x2, y2);

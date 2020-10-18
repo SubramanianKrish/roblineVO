@@ -30,4 +30,10 @@ void DrawLines(std::vector<std::vector<cv::Point3d>> lines);
 
 void DrawPoints(std::vector<cv::Point3d> points, std::vector<double> color, float point_size);
 
+cv::Mat GetEdgeImage(cv::Mat& img, int lowThreshold, int highThreshold, int kernel_size, bool enable_blur);
+
+cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP);
+
+std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
+
 void drawCoordinates();
