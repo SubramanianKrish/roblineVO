@@ -32,15 +32,17 @@ void DisplayDualImage(const cv::Mat& image1, const cv::Mat& image2);
 
 void DrawLines(std::vector<std::vector<cv::Point3d>> lines);
 
-void DrawPoints(std::vector<cv::Point3d> points, std::vector<double> color, float point_size);
+void DrawPoints3D(std::vector<cv::Point3d> points, std::vector<double> color, float point_size);
 
 cv::Mat GetEdgeImage(cv::Mat& img, int lowThreshold, int highThreshold, int kernel_size, bool enable_blur);
 
 cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP);
 
+void DrawSampledLines2D(const cv::Mat& img, std::vector<std::vector<cv::Point2i>>& sampled_lines);
+
 std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
 
 void drawCoordinates();
 // This doesn't belong here. <TODO> refactor later into a separate line class
-std::vector<std::vector<int>> SampleIndices(const std::vector<std::vector<int>>& lines, const int& height, const int& width);
+std::vector<std::vector<cv::Point2i>> SampleIndices(const std::vector<cv::Vec4i>& lines, const int& height, const int& width);
 

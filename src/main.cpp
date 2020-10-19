@@ -49,46 +49,57 @@ int main(int argc, char* argv[])
   std::vector<cv::Vec4i> linesP; // will hold the results of the detection
   
   linesP = GetHoughLinesP(edge_image, 50, 50, 10);
-
-  cv::Mat hough_img = DrawHoughLinesP(im1, linesP);
   
-  DisplayImage(hough_img);
-  cout << "Loading data ..." << endl;
+  const int ht = 480;
+  const int wd = 640;
+
+  // Returns as a copy of the original thing. time expensive.
+  std::vector<std::vector<cv::Point2i>> sampled_lines;
+  sampled_lines = SampleIndices(linesP, 480, 640);
+
+  DrawSampledLines2D(im1, sampled_lines);
+  DisplayImage(im1);
+
+  // cv::Mat hough_img = DrawHoughLinesP(im1, linesP);
   
-  string data_dir     = "../data/rgbd_dataset_freiburg1_xyz/";
-  string synched_file = "synched_data.txt";
-  string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
-  ifstream infile(data_dir + synched_file);
+  // DisplayImage(hough_img);
 
-  while(getline(infile, image_pair_path)){
-    std::stringstream linestream(image_pair_path);
-    linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
+  // cout << "Loading data ..." << endl;
+  
+  // string data_dir     = "../data/rgbd_dataset_freiburg1_xyz/";
+  // string synched_file = "synched_data.txt";
+  // string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
+  // ifstream infile(data_dir + synched_file);
+
+  // while(getline(infile, image_pair_path)){
+  //   std::stringstream linestream(image_pair_path);
+  //   linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
-    // cv::Mat depth_img = ReadImage(data_dir + depth_path);
+  //   cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
+  //   // cv::Mat depth_img = ReadImage(data_dir + depth_path);
     
-    // DisplayDualImage(rgb_img, depth_img);
-    // cv::waitKey(10);
+  //   // DisplayDualImage(rgb_img, depth_img);
+  //   // cv::waitKey(10);
 
-    int nrows = 10;
-    int ncols = 4;
-    int nlines = 15;
-    Eigen::MatrixXd random_values = Eigen::MatrixXd::Random(nrows, ncols);
+  //   int nrows = 10;
+  //   int ncols = 4;
+  //   int nlines = 15;
+  //   Eigen::MatrixXd random_values = Eigen::MatrixXd::Random(nrows, ncols);
     
-    // height -> 480; width -> 640
-    vector<int> line_vec{0,0,20,40};
-    vector<vector<int>> lines{line_vec};
-    vector<vector<int>> sampled_indices;
-    sampled_indices = SampleIndices(lines, 640, 480);
-    for (auto index: sampled_indices){
-      cout << index[0] << " " << index[1] << endl;
-    }
+  //   // height -> 480; width -> 640
+  //   vector<int> line_vec{0,0,20,40};
+  //   vector<vector<int>> lines{line_vec};
+  //   vector<vector<int>> sampled_indices;
+  //   sampled_indices = SampleIndices(lines, 640, 480);
+  //   for (auto index: sampled_indices){
+  //     cout << index[0] << " " << index[1] << endl;
+  //   }
 
-    break;
-  }
+  //   break;
+  // }
 
-  // close file
-  infile.close();
+  // // close file
+  // infile.close();
 
   return 0;
 
