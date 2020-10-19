@@ -15,7 +15,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 # Include OpenCV and Eigen
-find_package(OpenCV 3.0 QUIET)
+find_package(OpenCV 3.4.9 QUIET)
 if(NOT OpenCV_FOUND)
     message(FATAL_ERROR "OpenCV > 3.0 is not found. Please check readme")
 endif()

@@ -10,7 +10,7 @@ Changelog:
 
 #include <opencv2/opencv.hpp>
 #include <pangolin/pangolin.h>
-
+#include <vector> 
 // Read in an image
 cv::Mat ReadImage(std::string image_path);
 
@@ -25,3 +25,15 @@ void DrawSingleCamera(const cv::Mat& camera_matrix, float w=1.0, float h_ratio=0
 
 // Show two images side-by-side
 void DisplayDualImage(const cv::Mat& image1, const cv::Mat& image2);
+
+void DrawLines(std::vector<std::vector<cv::Point3d>> lines);
+
+void DrawPoints(std::vector<cv::Point3d> points, std::vector<double> color, float point_size);
+
+cv::Mat GetEdgeImage(cv::Mat& img, int lowThreshold, int highThreshold, int kernel_size, bool enable_blur);
+
+cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP);
+
+std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
+
+void drawCoordinates();
