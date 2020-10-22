@@ -31,7 +31,8 @@ We use the TUM fr1 sequence for developmental testing [https://vision.in.tum.de/
 Download the fr1/xyz sequence and extract it  
 Place the extracted folder in the data directory  
 P.S: Run the associate script in tools to time synchronize the rgb and depth images  
-`$ python associate.py ../data/rgbd_dataset_freiburg1_xyz/rgb.txt ../data/rgbd_dataset_freiburg1_xyz/depth.txt`  
+
+<code> $ python associate.py ../data/rgbd_dataset_freiburg1_xyz/rgb.txt ../data/rgbd_dataset_freiburg1_xyz/depth.txt </code>  
 This should've created the synched_data.txt file in the fr1 data directory
 
 ### References:

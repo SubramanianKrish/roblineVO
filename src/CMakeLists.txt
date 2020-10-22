@@ -34,6 +34,7 @@ include_directories(
 add_library(${PROJECT_NAME} STATIC 
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
     ${CMAKE_SOURCE_DIR}/src/frame.cpp
+    ${CMAKE_SOURCE_DIR}/src/line.cpp
     )
 
 # Link external libraries (opencv, eigen and our custom library)
@@ -45,8 +46,8 @@ target_link_libraries(
     )
 
 # Add main executable file
-add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-target_link_libraries(main PUBLIC ${PROJECT_NAME})
+# add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+# target_link_libraries(main PUBLIC ${PROJECT_NAME})
 
 # Add unit_test executables
 add_executable(viewer ${CMAKE_CURRENT_SOURCE_DIR}/test_viewer.cpp)
