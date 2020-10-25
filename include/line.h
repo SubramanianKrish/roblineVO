@@ -10,7 +10,7 @@ Changelog:
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-
+#include <Eigen/Dense>
 // <maybe-todo> Is class the appropriate abstraction for the following functions?
 class vo_line{
 
@@ -23,10 +23,10 @@ class vo_line{
 
         // Get the probabilistic hough lines
         // <TODO> Convert to LSD as we need matching later
-        std::vector<cv::Vec4i> GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
+        Eigen::MatrixXi GetHoughLinesP(cv::Mat& edge_image, int thresh, int minLen, int maxGap);
 
         // Sampler for 2D lines
-        std::vector<std::vector<cv::Point2i>> SampleIndices(const std::vector<cv::Vec4i>& lines, const int& height, const int& width);
+        std::vector<std::vector<cv::Point2i>> SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width);
         
         // Reprojection function to get 3D points
         // <TODO> Should use cv::Mat [nx2] or [2xn] as input
@@ -35,5 +35,5 @@ class vo_line{
 
         // Draw lines on 2D image
         // <TODO?> Why is this not wrapping over drawlines 2D? more so why exist?
-        cv::Mat DrawHoughLinesP(cv::Mat img, std::vector<cv::Vec4i> linesP);
+        cv::Mat DrawHoughLinesP(cv::Mat img, Eigen::MatrixXi linesP);
 };

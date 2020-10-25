@@ -17,6 +17,7 @@ Changelog:
 // Custom headers
 #include "frame.h"
 #include "utils.h"
+#include "line.h"
 
 using Eigen::MatrixXd;
 using namespace std;
@@ -33,6 +34,8 @@ int main(int argc, char* argv[])
   string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
   ifstream infile(data_dir + synched_file);
 
+  vo_line line_obj;
+
   while(getline(infile, image_pair_path)){
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
@@ -42,23 +45,23 @@ int main(int argc, char* argv[])
     
     DisplayDualImage(rgb_img, depth_img);
 
-    cv::Mat edge_image = GetEdgeImage(rgb_img, 50, 150, 3, true);
+    cv::Mat edge_image = line_obj.GetEdgeImage(rgb_img, 50, 150, 3, true);
 
     // DisplayImage(edge_image);
 
-    std::vector<cv::Vec4i> linesP; // will hold the results of the detection
+    Eigen::Matrix4i linesP; // will hold the results of the detection
     
-    linesP = GetHoughLinesP(edge_image, 50, 50, 10);
+    linesP = line_obj.GetHoughLinesP(edge_image, 50, 50, 10);
 
     // cv::Mat hough_img = DrawHoughLinesP(rgb_img, linesP);
   
     // DisplayImage(hough_img);
 
-    std::vector<std::vector<cv::Point2i>> sampled_lines;
+    // std::vector<std::vector<cv::Point2i>> sampled_lines;
 
-    sampled_lines = SampleIndices(linesP, 480, 640);
+    // sampled_lines = line_obj.SampleIndices(linesP, 480, 640);
     
-    DrawSampledLines2D(rgb_img, sampled_lines);
+    // DrawSampledLines2D(rgb_img, sampled_lines);
     
     // DisplayImage(rgb_img);
 

@@ -46,9 +46,12 @@ target_link_libraries(
     )
 
 # Add main executable file
-# add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-# target_link_libraries(main PUBLIC ${PROJECT_NAME})
+add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+target_link_libraries(main PUBLIC ${PROJECT_NAME})
 
 # Add unit_test executables
 add_executable(viewer ${CMAKE_CURRENT_SOURCE_DIR}/test_viewer.cpp)
 target_link_libraries(viewer PUBLIC ${PROJECT_NAME})
+
+add_executable(eigen_test ${CMAKE_CURRENT_SOURCE_DIR}/eigen_test.cpp)
+target_link_libraries(eigen_test PUBLIC ${PROJECT_NAME})
