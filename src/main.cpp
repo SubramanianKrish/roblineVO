@@ -35,7 +35,9 @@ int main(int argc, char* argv[])
   ifstream infile(data_dir + synched_file);
 
   vo_line line_obj;
-
+  std::vector<Frame> frames;
+  std::vector<FramePair> pairs;
+  
   while(getline(infile, image_pair_path)){
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
@@ -43,15 +45,25 @@ int main(int argc, char* argv[])
     cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
     cv::Mat depth_img = ReadImage(data_dir + depth_path);
     
-    DisplayDualImage(rgb_img, depth_img);
+    Frame frame(rgb_img, depth_img);
 
-    cv::Mat edge_image = line_obj.GetEdgeImage(rgb_img, 50, 150, 3, true);
+    frames.push_back(frame);
+
+    if (frames.size() == 2){
+      FramePair pair(frames[0].rgb_image, frames[0].depth_image, rgb_img, depth_img);
+      pairs.push_back(pair);
+      frames.erase(frames.begin());
+    }
+
+    // DisplayDualImage(rgb_img, depth_img);
+
+    // cv::Mat edge_image = line_obj.GetEdgeImage(rgb_img, 50, 150, 3, true);
 
     // DisplayImage(edge_image);
 
-    Eigen::Matrix4i linesP; // will hold the results of the detection
+    // Eigen::Matrix4i linesP; // will hold the results of the detection
     
-    linesP = line_obj.GetHoughLinesP(edge_image, 50, 50, 10);
+    // linesP = line_obj.GetHoughLinesP(edge_image, 50, 50, 10);
 
     // cv::Mat hough_img = DrawHoughLinesP(rgb_img, linesP);
   
@@ -66,7 +78,14 @@ int main(int argc, char* argv[])
     // DisplayImage(rgb_img);
 
 
-    cv::waitKey(10);
+    // cv::waitKey(10);
+    // cv::Mat prev_rgb_img = ReadImage(data_dir + rgb_path);
+    // cv::Mat prev_depth_img = ReadImage(data_dir + depth_path);
+  }
+  
+  for(auto pair: pairs){
+    std::cout << pair.pstruct.linesInLeft.size() << std::endl;
+    DisplayDualImage(pair.rgb_image1, pair.rgb_image2);
   }
 
   // close file

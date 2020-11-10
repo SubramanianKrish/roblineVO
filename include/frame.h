@@ -14,11 +14,23 @@ Changelog:
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include "LineMatchingAlgorithm.hh"
+typedef struct PairData pairStruct;
 
 class Frame{
     public:
         cv::Mat rgb_image;
-
+        cv::Mat depth_image;
         // Constructor for a frame with just RGB image
-        Frame(const cv::Mat& rgb_image);
+        Frame(const cv::Mat& rgb_image, const cv::Mat& depth_image);
+};
+
+class FramePair{
+    public:
+        cv::Mat rgb_image1;
+        cv::Mat depth_image1;
+        cv::Mat rgb_image2;
+        cv::Mat depth_image2;
+        pairStruct pstruct;
+        FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 };
