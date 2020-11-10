@@ -18,6 +18,7 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
                                                                                                                         depth_image1(depth_image1),
                                                                                                                         rgb_image2(rgb_image2), 
                                                                                                                         depth_image2(depth_image2) {
+    // Function returing lines in both images and matches between them contained in a structure element
     pstruct = image_process(rgb_image1, rgb_image2);
 
 }

@@ -26,11 +26,16 @@ class Frame{
 };
 
 class FramePair{
+    /*
+    Class containing all required information about a pair of consecutive images
+    */
     public:
         cv::Mat rgb_image1;
         cv::Mat depth_image1;
         cv::Mat rgb_image2;
         cv::Mat depth_image2;
+
+        // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         pairStruct pstruct;
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 };
