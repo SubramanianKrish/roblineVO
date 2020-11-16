@@ -51,4 +51,6 @@ namespace utils{
 
     // This draws the world coordinate frame at the world origin
     void DrawCoordinates();
+
+    cv::Mat Cov3D(double u, double v, double x, double y, double depth);
 }
