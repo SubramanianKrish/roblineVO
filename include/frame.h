@@ -11,7 +11,7 @@ Changelog:
 */
 
 #pragma once
-
+#include <Eigen/Dense>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include "LineMatchingAlgorithm.hh"
@@ -35,6 +35,9 @@ class FramePair{
         cv::Mat rgb_image2;
         cv::Mat depth_image2;
 
+        Eigen::Matrix<double, Eigen::Dynamic, 4> img1_lines;
+        Eigen::Matrix<double, Eigen::Dynamic, 4> img2_lines;
+        
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         pairStruct pstruct;
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);

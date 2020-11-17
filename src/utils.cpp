@@ -79,7 +79,7 @@ namespace utils{
         }
     }
 
-    cv::Mat Cov3D(,double x, double y, double depth){
+    cv::Mat Cov3D(double x, double y, double depth){
         const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
         const double sigma_g = 3;
         const double f = 1.0, cu = 320, cv = 240;
