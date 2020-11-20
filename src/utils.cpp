@@ -22,7 +22,7 @@ namespace utils{
         }
         cv::namedWindow("Display Image", CV_WINDOW_NORMAL);
         cv::imshow("Display Image", img);
-        cv::waitKey(0);
+        cv::waitKey(10);
     }
 
     // Display two images side by side
@@ -42,6 +42,16 @@ namespace utils{
                 thickness, lineType );
     }
 
+    // Helper to draw houghlines
+    cv::Mat DrawHoughLinesP(cv::Mat img, Eigen::MatrixXi linesP){
+    for(std::size_t i = 0; i < linesP.rows(); i++)
+    {
+        Eigen::Vector4i l = linesP.row(i);
+        line( img, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, cv::LINE_AA);
+    }
+    return img;
+}
+
     // Draw 3D lines connecting two 3D points
     void DrawLines3D(const std::vector<std::vector<cv::Point3d>>& lines) {
         glBegin(GL_LINES);
@@ -55,15 +65,15 @@ namespace utils{
     }
 
     // Draw 3D points
-    void DrawPoints3D(const std::vector<cv::Point3d>& points, const std::vector<double>& color, const float& point_size = 0) {
+    void DrawPoints3D(const Eigen::MatrixXd& points, const std::vector<double>& color, const float& point_size = 0) {
         if(point_size > 0) {
             glPointSize(point_size);
         }
         glBegin(GL_POINTS);
         glColor3f(color[0], color[1], color[2]);
-        for (auto it = points.begin(); it != points.end(); it++){
-            double x = (*it).x, y = (*it).y, z = (*it).z;
-            glVertex3d(x, y, z);
+        int size = points.cols();
+        for (int i=0; i<size; ++i){
+            glVertex3d(points(0,i), points(1,i), points(2,i));
         }
         glEnd();
     }

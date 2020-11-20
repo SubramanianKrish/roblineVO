@@ -31,6 +31,10 @@ namespace utils{
     // Draw line on image given the coordinates of endpoints
     void DrawLine2D(const cv::Mat& img, const int& x1, const int& y1, const int& x2, const int& y2);
     
+    // Draw hough lines on 2D image
+    // <TODO?> Why is this not wrapping over drawlines 2D? more so why exist?
+    cv::Mat DrawHoughLinesP(cv::Mat img, Eigen::MatrixXi linesP);
+
     // Draw lines in 3D between two points (x1,y1,z1) and (x2,y2,z2)
     // <TODO> May need to use cv::Mat to represent the lines [nx3] and n->even as each 
     // pair would represent a line.
@@ -42,7 +46,7 @@ namespace utils{
     // Draw points in 3D
     // <TODO> May need to work with cv::mat [nx3] as the input along with their color information
     // <TODO> Add default color information if no color is passed
-    void DrawPoints3D(const std::vector<cv::Point3d>& points, const std::vector<double>& color, const float& point_size);
+    void DrawPoints3D(const Eigen::MatrixXd& points, const std::vector<double>& color, const float& point_size);
 
     // Draw points sampled on lines in 2D
     // <TODO> May need to work with cv::Mat [nx2] points as the input

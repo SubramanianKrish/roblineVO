@@ -19,7 +19,9 @@ find_package(OpenCV 3.4.9 QUIET)
 if(NOT OpenCV_FOUND)
     message(FATAL_ERROR "OpenCV > 3.0 is not found. Please check readme")
 endif()
-find_package(Eigen3 REQUIRED)
+# Need Eigen 3 and above for the all variable
+find_package(Eigen3 3.3 REQUIRED)
+message("This is the path to eigen: ${EIGEN3_INCLUDE_DIRS}")
 find_package(Pangolin REQUIRED)
 
 # Add libraries - tells CMake to look for headers here when compiling
@@ -33,8 +35,9 @@ include_directories(
 # Create a static library (compiled and linked completely -> One big executable)
 add_library(${PROJECT_NAME} STATIC 
     ${CMAKE_SOURCE_DIR}/src/utils.cpp
-    ${CMAKE_SOURCE_DIR}/src/frame.cpp
     ${CMAKE_SOURCE_DIR}/src/line.cpp
+    ${CMAKE_SOURCE_DIR}/src/frame.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewer.cpp
     )
 
 # Link external libraries (opencv, eigen and our custom library)

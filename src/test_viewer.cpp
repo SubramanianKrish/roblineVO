@@ -51,10 +51,7 @@ int main(){
         std::vector<std::vector<cv::Point3d>> lines = {{x,y}};
         std::vector<cv::Point3d> points = {x,y};
         // DrawLines(lines);
-        DrawPoints3D(points, {1.0, 1.0, 0.0}, 3);
         // Swap frames and Process Events
         pangolin::FinishFrame();
-    }
-
-    
+    }    
 }

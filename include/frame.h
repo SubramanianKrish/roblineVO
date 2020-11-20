@@ -15,10 +15,26 @@ Changelog:
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <memory>
+
+#include "line.h"
+
 class Frame{
     public:
-        cv::Mat rgb_image;
+        cv::Mat rgb_image, depth_image;
+        
+        std::shared_ptr<vo_line> lines;
 
-        // Constructor for a frame with just RGB image
-        Frame(const cv::Mat& rgb_image);
+        Eigen::MatrixXd points_3d;
+
+        // reprojection function
+        Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
+        // Constructor for a frame
+        Frame(const cv::Mat& rgb_image, const cv::Mat& depth_image);
+
+
+    private:
+        int im_wd, im_ht; // height and width of image
+        std::vector<float> dist; // distortion parameters
+        Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
 };

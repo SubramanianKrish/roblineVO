@@ -3,8 +3,8 @@
 
 #include "line.h"
 
-cv::Mat vo_line::GetEdgeImage(cv::Mat& img, int lowThreshold = 50, int highThreshold = 150, int kernel_size = 3, bool enable_blur = false){
-    cv::Mat smooth_image, gray_image, edge_image;
+void vo_line::GetEdgeImage(const cv::Mat& img, int lowThreshold = 50, int highThreshold = 150, int kernel_size = 3, bool enable_blur = false){
+    cv::Mat smooth_image, gray_image;
     if (enable_blur){
         cv::blur(img, smooth_image, cv::Size(5, 5), cv::Point(-1,-1) );
     }
@@ -13,7 +13,6 @@ cv::Mat vo_line::GetEdgeImage(cv::Mat& img, int lowThreshold = 50, int highThres
     }
     cv::cvtColor(smooth_image, gray_image, cv::COLOR_BGR2GRAY);
     cv::Canny(gray_image, edge_image, lowThreshold, highThreshold, kernel_size);
-    return edge_image;
 }
 
 Eigen::MatrixXi vo_line::GetHoughLinesP(cv::Mat& edge_image, int thresh = 50, int minLen = 50, int maxGap = 10){
@@ -35,16 +34,7 @@ Eigen::MatrixXi vo_line::GetHoughLinesP(cv::Mat& edge_image, int thresh = 50, in
     return mat;
 }
 
-cv::Mat vo_line::DrawHoughLinesP(cv::Mat img, Eigen::MatrixXi linesP){
-    for(std::size_t i = 0; i < linesP.rows(); i++)
-    {
-        Eigen::Vector4i l = linesP.row(i);
-        line( img, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, cv::LINE_AA);
-    }
-    return img;
-}
-
-std::vector<std::vector<cv::Point2i>> vo_line::SampleIndices(const Eigen::MatrixXi& lines, const int& ht, const int& wd){
+Eigen::MatrixXd vo_line::SampleIndices(const Eigen::MatrixXi& lines, const int& ht, const int& wd){
     /*
     Input: lines matrix expected to be of form nx4 with each entry being [x1,y1,x2,y2] 
            where x_i, y_i denote the end points of the lines
@@ -53,13 +43,12 @@ std::vector<std::vector<cv::Point2i>> vo_line::SampleIndices(const Eigen::Matrix
     note: different lines have different n_samples based on line length
     */
    
-    std::vector<std::vector<cv::Point2i>> sampled_lines;
     int max_samples = 100;
-    std::cout << lines.rows() << std::endl;
+    u_int num_points = 0;
 
     // Iterating through row elements is possible in eigen 3.4
     for(int i = 0; i < lines.rows(); i++ ){        
-        Eigen::Vector2f p1(lines(i,0), lines(i,1)), p2(lines(i,2), lines(i,3));
+        Eigen::Vector2i p1(lines(i,0), lines(i,1)), p2(lines(i,2), lines(i,3));
         float dist = (p1-p2).norm();
         float n_samples = std::min(max_samples, int(dist));
 
@@ -76,6 +65,7 @@ std::vector<std::vector<cv::Point2i>> vo_line::SampleIndices(const Eigen::Matrix
             // Bresenham's algorithm
             while(true){
                 line_points.push_back(cv::Point2i(x0,y0));
+                num_points++;
 
                 if(x0 == x1 && y0 == y1) break;
                 int e2 = 2*err;
@@ -93,21 +83,34 @@ std::vector<std::vector<cv::Point2i>> vo_line::SampleIndices(const Eigen::Matrix
         else{
          for (int i=1; i<=max_samples; ++i){
             line_points.push_back(cv::Point2i(x0 + (x1 - x0)*(i-1)/(max_samples-1), y0 + (y1 - y0)*(i-1)/(max_samples-1)));
+            num_points++;
          }
         }
-        // Add the x and y indices for returning later
-        sampled_lines.push_back(line_points);
+        // Add the x and y indices to class variable
+        sampled_lines_2d.push_back(line_points);
     }
-    return sampled_lines;
+
+    //convert to an eigen matrix of points [this maybe stupidly slow]
+    Eigen::MatrixXd sampled_indices(num_points,2);
+    for (int i=0, eig_index=0; i<lines.rows(); ++i){
+        size_t num_points_in_line = sampled_lines_2d[i].size();
+        for(int j=0; j<num_points_in_line; ++j){
+            Eigen::Vector2d index_2d(sampled_lines_2d[i][j].x, sampled_lines_2d[i][j].y);
+            sampled_indices.row(eig_index++) = index_2d;
+        }
+    }
+
+    return sampled_indices;
+
 }
 
+vo_line::vo_line(const cv::Mat& rgb_image, const cv::Mat& depth_image){
+    // populate edge image in line class
+    vo_line::GetEdgeImage(rgb_image);
 
-// std::vector<cv::Point3d> vo_line::Reproject(const cv::Mat& rgb_image, const cv::Mat& depth_image, const std::vector<std::vector<cv::Point2i>> sampled_lines_2d){
-//     // Ugh - convert to cv mat for matrix operation
-//     for(auto& line: sampled_lines_2d){
-//         std::vector<cv::Point3d> line_3d;
-//         for (auto& point: line){
-//             continue;
-//         }
-//     }
-// }
+    // populate the detected lines in houghP [edge_image avbl in class]
+    line_endpoints = vo_line::GetHoughLinesP(edge_image);
+
+    // sample lines in image [copying result to member may be slow <to-do> populate inside function]
+    sampled_lines_eig = vo_line::SampleIndices(line_endpoints, rgb_image.rows, rgb_image.cols);
+}
