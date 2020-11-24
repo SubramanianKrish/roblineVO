@@ -53,14 +53,14 @@ int main(int argc, char* argv[])
     cv::Mat depth_img = ReadImage(data_dir + depth_path);
 
     // Make a frame and populate information internally
-    Frame current_frame(rgb_img, depth_img);
+    Frame* current_frame = new Frame(rgb_img, depth_img);
 
-    DisplayImage(current_frame.lines->edge_image);
+    DisplayImage((*current_frame).lines->edge_image);
 
-    robline_viewer->updateCurrentFrame(&current_frame);
+    robline_viewer->updateCurrentFrame(current_frame);
     // Process two frame information here
 
-    cv::waitKey(0);
+    cv::waitKey(10);
   }
 
   // close file
