@@ -89,6 +89,25 @@ namespace utils{
         }
     }
 
+    cv::Mat Cov3D(double x, double y, double depth){
+        const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
+        const double sigma_g = 3;
+        const double f = 1.0, cu = 320, cv = 240;
+        double sigma_d = c1*depth*depth + c2*depth + c3;
+
+        cv::Mat cov2d = (cv::Mat_<double>(3,3)<< sigma_g*sigma_g, 0, 0,
+		                                    0, sigma_g*sigma_g, 0,
+		                                    0,  0,  sigma_d);
+
+        cv::Mat J = (cv::Mat_<double>(3,3)<< depth/f, 0, x/depth,
+		                                    0, depth/f, y/depth,
+		                                    0,  0,  1);
+
+        cv::Mat cov3d = J*cov2d*J.t();
+
+        return cov3d;
+    }
+
     // Code reference: https://github.com/uoip/pangolin/blob/master/python/contrib.hpp
     void DrawSingleCamera(const cv::Mat& camera_pose, const float& w, const float& h_ratio, const float& z_ratio) {
         // Tunes the length to width ratio of the rectangle

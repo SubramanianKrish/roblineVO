@@ -11,9 +11,11 @@ Changelog:
 */
 
 #pragma once
-
+#include <Eigen/Dense>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include "LineMatchingAlgorithm.hh"
+typedef struct PairData pairStruct;
 
 #include <memory>
 
@@ -37,4 +39,22 @@ class Frame{
         int im_wd, im_ht; // height and width of image
         std::vector<float> dist; // distortion parameters
         Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
+};
+
+class FramePair{
+    /*
+    Class containing all required information about a pair of consecutive images
+    */
+    public:
+        cv::Mat rgb_image1;
+        cv::Mat depth_image1;
+        cv::Mat rgb_image2;
+        cv::Mat depth_image2;
+
+        Eigen::Matrix<float, Eigen::Dynamic, 4> img1_lines;
+        Eigen::Matrix<float, Eigen::Dynamic, 4> img2_lines;
+        
+        // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
+        pairStruct pstruct;
+        FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 };
