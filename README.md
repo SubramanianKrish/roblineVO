@@ -18,7 +18,16 @@ Robust Line based Visual odometry using RGB-D images
     + Glew  
     > sudo apt install libglew-dev  
 
-5. Python 2.7 [Optional]  
+5. LBD_and_LineMatching [Download here: https://github.com/XuefengBUPT/LBD_and_LineMatching]  
+    + Used for line tracking  
+    + Place at the directory where robline is cloned, i.e, should be placed right outside of robline root dir.  
+    > git clone https://github.com/XuefengBUPT/LBD_and_LineMatching  
+
+6. Arpack++ [Large scale eigen value solver]
+    + Used by LBD Line matcher
+    > sudo apt-get install arpack++
+
+7. Python 2.7 [Optional]  
     For running the associate script to time synchronize RGB and Depth images of the TUM Dataset
 
 ## Build instruction

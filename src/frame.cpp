@@ -124,21 +124,15 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
 }
 
 Eigen::MatrixXd FramePair::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
-    // Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-    Eigen::MatrixXd points_3d(3, 640*480);
-    // This is slow. Need to find a better way :'<
-    // for(int i=0; i<sampled_lines.rows(); ++i){
-    //     points_3d(0,i) = (sampled_lines(i,0) - K(0,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/(K(0,0)*5000);
-    //     points_3d(1,i) = (sampled_lines(i,1) - K(1,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/(K(1,1)*5000);
-    //     points_3d(2,i) = depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/5000;
-    // }
-
-    for(int i=0; i < 480; ++i){
-        for(int j=0; j<640; ++j){
-            points_3d(0,i*640+j) = (j - K(0,2))*depth_image.at<uint16_t>(i,j)/(K(0,0)*5000.0);
-            points_3d(1,i*640+j) = (i - K(1,2))*depth_image.at<uint16_t>(i,j)/(K(1,1)*5000.0);
-            points_3d(2,i*640+j) = depth_image.at<uint16_t>(i,j)/5000.0;
-        }
+    Eigen::MatrixXd points_3d(3, sampled_lines.rows());
+    cout << sampled_lines << endl;
+    // This is slow. Need to find a better way: can try K inverse
+    for(int i=0; i<sampled_lines.rows(); ++i){
+        int u = sampled_lines(i,0), v = sampled_lines(i,1);
+        float depth = depth_image.at<uint16_t>(v, u)/5000.0;
+        points_3d(0,i) = (u - K(0,2))*depth/K(0,0);
+        points_3d(1,i) = (v - K(1,2))*depth/K(1,1);
+        points_3d(2,i) = depth;
     }
 
     return points_3d;
