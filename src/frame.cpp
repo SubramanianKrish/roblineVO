@@ -22,7 +22,6 @@ using namespace Eigen;
 
 Eigen::MatrixXd Frame::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
     Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-
     // This is slow. Need to find a better way :'<
     for(int i=0; i<sampled_lines.rows(); ++i){
         points_3d(0,i) = (sampled_lines(i,0) - K(0,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/K(0,0);
@@ -55,7 +54,7 @@ Frame::Frame(const cv::Mat& rgb_image, const cv::Mat& depth_image)
            points_3d = Reproject(depth_image, lines->sampled_lines_eig);
        }
 
-Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int& ht, const int& wd){
+Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int& ht, const int& wd, std::vector<std::vector<cv::Point2i>>& sampled_lines_2d ){
     /*
     Input: lines matrix expected to be of form nx4 with each entry being [x1,y1,x2,y2] 
            where x_i, y_i denote the end points of the lines
@@ -66,7 +65,6 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
    
     int max_samples = 100;
     u_int num_points = 0;
-    std::vector<std::vector<cv::Point2i>> sampled_lines_2d;
 
     // Iterating through row elements is possible in eigen 3.4
     for(int i = 0; i < lines.rows(); i++ ){        
@@ -126,13 +124,21 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
 }
 
 Eigen::MatrixXd FramePair::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
-    Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-
+    // Eigen::MatrixXd points_3d(3, sampled_lines.rows());
+    Eigen::MatrixXd points_3d(3, 640*480);
     // This is slow. Need to find a better way :'<
-    for(int i=0; i<sampled_lines.rows(); ++i){
-        points_3d(0,i) = (sampled_lines(i,0) - K(0,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/K(0,0);
-        points_3d(1,i) = (sampled_lines(i,1) - K(1,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/K(1,1);
-        points_3d(2,i) = depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1));
+    // for(int i=0; i<sampled_lines.rows(); ++i){
+    //     points_3d(0,i) = (sampled_lines(i,0) - K(0,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/(K(0,0)*5000);
+    //     points_3d(1,i) = (sampled_lines(i,1) - K(1,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/(K(1,1)*5000);
+    //     points_3d(2,i) = depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/5000;
+    // }
+
+    for(int i=0; i < 480; ++i){
+        for(int j=0; j<640; ++j){
+            points_3d(0,i*640+j) = (j - K(0,2))*depth_image.at<uint16_t>(i,j)/(K(0,0)*5000.0);
+            points_3d(1,i*640+j) = (i - K(1,2))*depth_image.at<uint16_t>(i,j)/(K(1,1)*5000.0);
+            points_3d(2,i*640+j) = depth_image.at<uint16_t>(i,j)/5000.0;
+        }
     }
 
     return points_3d;
@@ -181,13 +187,14 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
         cv::waitKey(0);
         */
 
-       // sample lines in image [copying result to member may be slow <to-do> populate inside function]
-       sampled_lines_eig_left = SampleIndices(img1_lines, rgb_image1.rows, rgb_image1.cols);
-       sampled_lines_eig_right = SampleIndices(img2_lines, rgb_image2.rows, rgb_image2.cols);
-
-        // Reproject left and right image points to 3D
-       points_3d_im1 = Reproject(depth_image1, sampled_lines_eig_left);
-       points_3d_im2 = Reproject(depth_image2, sampled_lines_eig_right);
     }
+
+    // sample lines in image [copying result to member may be slow <to-do> populate inside function]
+    sampled_lines_eig_left = SampleIndices(img1_lines, rgb_image1.rows, rgb_image1.cols, sampled_lines_2d_left);
+    sampled_lines_eig_right = SampleIndices(img2_lines, rgb_image2.rows, rgb_image2.cols, sampled_lines_2d_right);
+
+    // Reproject left and right image points to 3D
+    points_3d_im1 = Reproject(depth_image1, sampled_lines_eig_left);
+    points_3d_im2 = Reproject(depth_image2, sampled_lines_eig_right);
 
 }

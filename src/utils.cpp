@@ -8,8 +8,11 @@ namespace utils{
     
     // Read in the image
     // <TODO/possible BUG> We read in depth image as color. Read as 1D image?
-    cv::Mat ReadImage(const std::string& image_path){
-        cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+    cv::Mat ReadImage(const std::string& image_path, bool rgb){
+        cv::Mat img;
+        if(rgb) img = cv::imread(image_path, cv::IMREAD_COLOR);
+        else    img = cv::imread(image_path, cv::IMREAD_UNCHANGED);
+        
         return img;
     }
     

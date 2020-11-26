@@ -52,9 +52,6 @@ int main(int argc, char* argv[])
   // Line object will probably not need it here. Check later
   // vo_line line_obj();
 
-  // Vector to hold consecutive frames in the dataset
-  std::vector<Frame> frames;
-
   // Vector to hold objects of FramePair class
   // Each object contains lines found in both images and matches between the frames
   std::vector<FramePair*> pairs;
@@ -63,9 +60,9 @@ int main(int argc, char* argv[])
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
-    cv::Mat depth_img = ReadImage(data_dir + depth_path);
-    
+    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path, true);
+    cv::Mat depth_img = ReadImage(data_dir + depth_path, false);
+
     if (isFirst)
     {
       previous_rgb = rgb_img;
@@ -76,12 +73,15 @@ int main(int argc, char* argv[])
     else
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
-      pairs.push_back(fpair);
-      DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
+      // pairs.push_back(fpair);
       
+      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_left);
+      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_left);
+      utils::DisplayImage(fpair->rgb_image1);
+    
       robline_viewer->updateCurrentFrame(fpair);
-      
-      cv::waitKey(0);
+
+      cv::waitKey(50);
       
       // Update previous frame
       previous_rgb = rgb_img;

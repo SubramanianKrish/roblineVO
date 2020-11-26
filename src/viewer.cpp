@@ -39,11 +39,6 @@ void viewer::run(){
 
         utils::DrawCoordinates();
 
-        // Testing 3D line plot
-        cv::Point3d x = cv::Point3d(1.0, 1.0, 1.0);
-        cv::Point3d y = cv::Point3d(-1.0, -1.0, -1.0);
-        std::vector<cv::Point3d> points = {x,y};
-        
         // CRITICAL SECTION
         std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
 

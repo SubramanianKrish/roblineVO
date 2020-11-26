@@ -20,7 +20,7 @@ Changelog:
 
 namespace utils{
     // Read in an image
-    cv::Mat ReadImage(const std::string& image_path);
+    cv::Mat ReadImage(const std::string& image_path, bool rgb);
     
     // Display a single image
     void DisplayImage(const cv::Mat& img);

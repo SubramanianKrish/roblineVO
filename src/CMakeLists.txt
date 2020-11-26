@@ -41,7 +41,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/viewer.cpp
     )
     
-    LINK_DIRECTORIES(/home/pitcrew/geovis/LBD_and_LineMatching/build/)
+    LINK_DIRECTORIES(/home/subbu/Documents/Fall\ 2020/Geometric\ Vision/project/LBD_and_LineMatching/build)
     # Link external libraries (opencv, eigen and our custom library)
     target_link_libraries(
         ${PROJECT_NAME}

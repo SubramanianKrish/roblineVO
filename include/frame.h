@@ -58,6 +58,10 @@ class FramePair{
         Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
         Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
         
+        // DrawSampledLines uses these variables
+        std::vector<std::vector<cv::Point2i>> sampled_lines_2d_left;
+        std::vector<std::vector<cv::Point2i>> sampled_lines_2d_right;
+
         // Sampled 2d points in both images
         Eigen::MatrixXd sampled_lines_eig_left;
         Eigen::MatrixXd sampled_lines_eig_right;
@@ -74,7 +78,7 @@ class FramePair{
         Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
 
         // Line Sampler in 2D
-        Eigen::MatrixXd SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width);
+        Eigen::MatrixXd SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width, std::vector<std::vector<cv::Point2i>>& sampled_lines_2d);
 
         // Reprojection function
         Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
