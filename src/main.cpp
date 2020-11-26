@@ -86,9 +86,9 @@ int main(int argc, char* argv[])
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       pairs.push_back(fpair);
-      DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
-      // DisplayDualImage(previous_rgb, rgb_img);
-      cv::waitKey(1);
+      // DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
+      // // DisplayDualImage(previous_rgb, rgb_img);
+      // cv::waitKey(1);
       previous_rgb = rgb_img;
       previous_depth = depth_img;
     }

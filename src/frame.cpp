@@ -63,20 +63,37 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     // Function returing lines in both images and matches between them contained in a structure element
     pstruct = image_process(rgb_image1, rgb_image2);
 
-    img1_lines.resize(pstruct.linesInLeft.size(),4);
-    img2_lines.resize(pstruct.linesInRight.size(),4);
+    img1_lines.resize(int(pstruct.matches.size()/2),4);
+    img2_lines.resize(int(pstruct.matches.size()/2),4);
 
-    std::cout << "First Image" << std::endl;
-    for (int i = 0; i < pstruct.linesInLeft.size(); i++)
+    int lineIDLeft;
+    int lineIDRight;
+    for (unsigned int pair = 0; pair < pstruct.matches.size() / 2; pair++)
     {
-        Eigen::Vector4f r1(pstruct.linesInLeft[i][0].startPointX, pstruct.linesInLeft[i][0].startPointY, pstruct.linesInLeft[i][0].endPointX, pstruct.linesInLeft[i][0].endPointY);
-        img1_lines.row(i) = r1;
+        lineIDLeft = pstruct.matches[2 * pair];
+        lineIDRight = pstruct.matches[2 * pair + 1];
+        Eigen::Vector4i r1(int(pstruct.linesInLeft[lineIDLeft][0].startPointX), int(pstruct.linesInLeft[lineIDLeft][0].startPointY), 
+                            int(pstruct.linesInLeft[lineIDLeft][0].endPointX), int(pstruct.linesInLeft[lineIDLeft][0].endPointY));
+        Eigen::Vector4i r2(int(pstruct.linesInRight[lineIDRight][0].startPointX), int(pstruct.linesInRight[lineIDRight][0].startPointY), 
+                            int(pstruct.linesInRight[lineIDRight][0].endPointX), int(pstruct.linesInRight[lineIDRight][0].endPointY));
+        img1_lines.row(pair) = r1;
+        img2_lines.row(pair) = r2;
+
+        /*
+        Following code allows to visualize individual matches between the two images
+        */
+
+        // cv::Point startPoint = cv::Point(int(pstruct.linesInLeft[lineIDLeft][0].startPointX), int(pstruct.linesInLeft[lineIDLeft][0].startPointY));
+        // cv::Point endPoint = cv::Point(int(pstruct.linesInLeft[lineIDLeft][0].endPointX), int(pstruct.linesInLeft[lineIDLeft][0].endPointY));
+        // cv::line(rgb_image1, startPoint, endPoint, CV_RGB(255,0,0), 1, cv::LINE_AA, 0);
+        
+        // startPoint = cv::Point(int(pstruct.linesInRight[lineIDRight][0].startPointX), int(pstruct.linesInRight[lineIDRight][0].startPointY));
+        // endPoint = cv::Point(int(pstruct.linesInRight[lineIDRight][0].endPointX), int(pstruct.linesInRight[lineIDRight][0].endPointY));
+        // cv::line(rgb_image2, startPoint, endPoint, CV_RGB(255,0,0), 1, cv::LINE_AA, 0);
+
+
+        // utils::DisplayDualImage(rgb_image1, rgb_image2);
+        // cv::waitKey(0);
     }
-    
-    std::cout << "Second Image" << std::endl;
-    for (int i = 0; i < pstruct.linesInRight.size(); i++)
-    {
-        Eigen::Vector4f r2(pstruct.linesInRight[i][0].startPointX, pstruct.linesInRight[i][0].startPointY, pstruct.linesInRight[i][0].endPointX, pstruct.linesInRight[i][0].endPointY);
-        img2_lines.row(i) = r2;
-    }
+
 }

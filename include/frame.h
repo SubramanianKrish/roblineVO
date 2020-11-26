@@ -51,8 +51,8 @@ class FramePair{
         cv::Mat rgb_image2;
         cv::Mat depth_image2;
 
-        Eigen::Matrix<float, Eigen::Dynamic, 4> img1_lines;
-        Eigen::Matrix<float, Eigen::Dynamic, 4> img2_lines;
+        Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
+        Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
         
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         pairStruct pstruct;
