@@ -46,15 +46,40 @@ class FramePair{
     Class containing all required information about a pair of consecutive images
     */
     public:
+        // Previous frame
         cv::Mat rgb_image1;
         cv::Mat depth_image1;
+
+        // Current Frame
         cv::Mat rgb_image2;
         cv::Mat depth_image2;
 
+        // Lines in eigen form of both frames
         Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
         Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
         
+        // Sampled 2d points in both images
+        Eigen::MatrixXd sampled_lines_eig_left;
+        Eigen::MatrixXd sampled_lines_eig_right;
+
+        // 3d points in both images
+        Eigen::MatrixXd points_3d_im1;
+        Eigen::MatrixXd points_3d_im2;
+
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         pairStruct pstruct;
+        
+        // Camera parameters
+        std::vector<float> dist; // distortion parameters
+        Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
+
+        // Line Sampler in 2D
+        Eigen::MatrixXd SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width);
+
+        // Reprojection function
+        Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
+        
+        // ctor which populates members inside
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
+
 };

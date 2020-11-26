@@ -65,16 +65,6 @@ int main(int argc, char* argv[])
     
     cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
     cv::Mat depth_img = ReadImage(data_dir + depth_path);
-
-    // Make a frame and populate information internally
-    // Frame* current_frame = new Frame(rgb_img, depth_img);
-
-    // DisplayImage((*current_frame).lines->edge_image);
-
-    // robline_viewer->updateCurrentFrame(current_frame);
-    // // Process two frame information here
-
-    // cv::waitKey(10);
     
     if (isFirst)
     {
@@ -82,49 +72,22 @@ int main(int argc, char* argv[])
       previous_depth = depth_img;
       isFirst = false;
     }
+    
     else
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       pairs.push_back(fpair);
-      // DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
-      // // DisplayDualImage(previous_rgb, rgb_img);
-      // cv::waitKey(1);
+      DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
+      
+      robline_viewer->updateCurrentFrame(fpair);
+      
+      cv::waitKey(0);
+      
+      // Update previous frame
       previous_rgb = rgb_img;
       previous_depth = depth_img;
     }
-
-
-
-    // Frame frame(rgb_img, depth_img);
-
-    // frames.push_back(frame);
-
-    // if (frames.size() == 2){
-    //   // Create a pair object and store it in a vector for future access
-    //   FramePair pair(frames[0].rgb_image, frames[0].depth_image, rgb_img, depth_img);
-    //   pairs.push_back(pair);
-      
-    //   // Remove the first frame from the vector
-    //   frames.erase(frames.begin());
-    // }
-
-
-    // Eigen::Matrix4i linesP; // will hold the results of the detection
-    
-    // cv::Mat hough_img = DrawHoughLinesP(rgb_img, linesP);
-  
-    // std::vector<std::vector<cv::Point2i>> sampled_lines;
-
-    // sampled_lines = line_obj.SampleIndices(linesP, 480, 640);
-    
-    // DrawSampledLines2D(rgb_img, sampled_lines);
-
   }
-  
-  // for(auto pair: pairs){
-  //   std::cout << pair.pstruct.linesInLeft.size() << std::endl;
-  //   DisplayDualImage(pair.rgb_image1, pair.rgb_image2);
-  // }
 
   // close file
   infile.close();
