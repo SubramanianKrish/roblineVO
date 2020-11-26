@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace pangolin;
+using namespace utils;
 
 int main(){
     cout << "testing 3D viewer" << endl;
@@ -39,7 +40,7 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         d_cam.Activate(s_cam);
 
-        drawCoordinates();
+        DrawCoordinates();
         // Draw test camera
         DrawSingleCamera(camera_pose_origin);
         // DrawSingleCamera(camera_pose_translated);
@@ -50,10 +51,7 @@ int main(){
         std::vector<std::vector<cv::Point3d>> lines = {{x,y}};
         std::vector<cv::Point3d> points = {x,y};
         // DrawLines(lines);
-        DrawPoints3D(points, {1.0, 1.0, 0.0}, 3);
         // Swap frames and Process Events
         pangolin::FinishFrame();
-    }
-
-    
+    }    
 }

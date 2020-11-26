@@ -6,102 +6,135 @@ Changelog:
     awadhut - 10/02 - Initial commit
     subbu   - 10/02 - Adding Eigen, camera plotter 3D toy
     subbu   - 10/08 - Adding data set parsing
+    subbu   - 10/20 - adding reprojector
+    subbu   - 11/19 - 3d threaded viewer
 */
 
 // C++ Standard headers
 #include <iostream>
 #include <fstream>
 #include <Eigen/Dense>
+#include <thread>
+#include <pangolin/pangolin.h>
 
 // Custom headers
 #include "frame.h"
 #include "utils.h"
+#include "line.h"
+#include "viewer.h"
 
 using Eigen::MatrixXd;
 using namespace std;
+using namespace utils;
 
 int main(int argc, char* argv[])
 {
-  std::cout << "Starting system now .." << std::endl;
+  Eigen::initParallel();
+
+  // Start processing the data
+  std::cout << "Starting system .." << std::endl;
+  cout << "Loading data ..." << endl;
   
-  cv::Mat im1;
-  MatrixXd m(2,2);
-  m(0,0) = 3;
-  m(1,0) = 2.5;
-  m(0,1) = -1;
-  m(1,1) = m(1,0) + m(0,1);
-  std::cout << m << std::endl;
+  // Loading the data (TUMfr1)
+  string data_dir     = "../data/rgbd_dataset_freiburg1_xyz/";
+  string synched_file = "synched_data.txt";
 
-  im1 = ReadImage("../data/lines.png");
-  Frame test_frame(im1);
+  string window_name = "ROBust LINE Visual Odometry";;
+  viewer* robline_viewer = new viewer(window_name);
+  std::thread render_thread(&viewer::run, robline_viewer);
 
-  DrawLine(im1, 2, 2, 200, 200);
-  // DisplayImage(im1);
-  DisplayDualImage(im1, im1);
+  string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
+  ifstream infile(data_dir + synched_file);
 
-  cv::Mat edge_image = GetEdgeImage(im1, 50, 150, 3, true);
+  bool isFirst = true;
+  cv::Mat previous_rgb, previous_depth;
 
-  DisplayImage(edge_image);
+  // Line object will probably not need it here. Check later
+  // vo_line line_obj();
 
+  // Vector to hold consecutive frames in the dataset
+  std::vector<Frame> frames;
 
-
-
-  std::vector<cv::Vec4i> linesP; // will hold the results of the detection
+  // Vector to hold objects of FramePair class
+  // Each object contains lines found in both images and matches between the frames
+  std::vector<FramePair*> pairs;
   
-  linesP = GetHoughLinesP(edge_image, 50, 50, 10);
-  
-  const int ht = 480;
-  const int wd = 640;
-
-  // Returns as a copy of the original thing. time expensive.
-  std::vector<std::vector<cv::Point2i>> sampled_lines;
-  sampled_lines = SampleIndices(linesP, 480, 640);
-
-  DrawSampledLines2D(im1, sampled_lines);
-  DisplayImage(im1);
-
-  // cv::Mat hough_img = DrawHoughLinesP(im1, linesP);
-  
-  // DisplayImage(hough_img);
-
-  // cout << "Loading data ..." << endl;
-  
-  // string data_dir     = "../data/rgbd_dataset_freiburg1_xyz/";
-  // string synched_file = "synched_data.txt";
-  // string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
-  // ifstream infile(data_dir + synched_file);
-
-  // while(getline(infile, image_pair_path)){
-  //   std::stringstream linestream(image_pair_path);
-  //   linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
+  while(getline(infile, image_pair_path)){
+    std::stringstream linestream(image_pair_path);
+    linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-  //   cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
-  //   // cv::Mat depth_img = ReadImage(data_dir + depth_path);
-    
-  //   // DisplayDualImage(rgb_img, depth_img);
-  //   // cv::waitKey(10);
+    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
+    cv::Mat depth_img = ReadImage(data_dir + depth_path);
 
-  //   int nrows = 10;
-  //   int ncols = 4;
-  //   int nlines = 15;
-  //   Eigen::MatrixXd random_values = Eigen::MatrixXd::Random(nrows, ncols);
-    
-  //   // height -> 480; width -> 640
-  //   vector<int> line_vec{0,0,20,40};
-  //   vector<vector<int>> lines{line_vec};
-  //   vector<vector<int>> sampled_indices;
-  //   sampled_indices = SampleIndices(lines, 640, 480);
-  //   for (auto index: sampled_indices){
-  //     cout << index[0] << " " << index[1] << endl;
-  //   }
+    // Make a frame and populate information internally
+    // Frame* current_frame = new Frame(rgb_img, depth_img);
 
-  //   break;
+    // DisplayImage((*current_frame).lines->edge_image);
+
+    // robline_viewer->updateCurrentFrame(current_frame);
+    // // Process two frame information here
+
+    // cv::waitKey(10);
+    
+    if (isFirst)
+    {
+      previous_rgb = rgb_img;
+      previous_depth = depth_img;
+      isFirst = false;
+    }
+    else
+    {
+      FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
+      pairs.push_back(fpair);
+      DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
+      // DisplayDualImage(previous_rgb, rgb_img);
+      cv::waitKey(1);
+      previous_rgb = rgb_img;
+      previous_depth = depth_img;
+    }
+
+
+
+    // Frame frame(rgb_img, depth_img);
+
+    // frames.push_back(frame);
+
+    // if (frames.size() == 2){
+    //   // Create a pair object and store it in a vector for future access
+    //   FramePair pair(frames[0].rgb_image, frames[0].depth_image, rgb_img, depth_img);
+    //   pairs.push_back(pair);
+      
+    //   // Remove the first frame from the vector
+    //   frames.erase(frames.begin());
+    // }
+
+
+    // Eigen::Matrix4i linesP; // will hold the results of the detection
+    
+    // cv::Mat hough_img = DrawHoughLinesP(rgb_img, linesP);
+  
+    // std::vector<std::vector<cv::Point2i>> sampled_lines;
+
+    // sampled_lines = line_obj.SampleIndices(linesP, 480, 640);
+    
+    // DrawSampledLines2D(rgb_img, sampled_lines);
+
+  }
+  
+  // for(auto pair: pairs){
+  //   std::cout << pair.pstruct.linesInLeft.size() << std::endl;
+  //   DisplayDualImage(pair.rgb_image1, pair.rgb_image2);
   // }
 
-  // // close file
-  // infile.close();
+  // close file
+  infile.close();
+  
+  // Close viewer completely
+  while(!robline_viewer->hasViewerStopped())
+    robline_viewer->requestViewerStop();
+  // Kill thread
+  render_thread.join();
+  pangolin::DestroyWindow(window_name);
 
   return 0;
-
-
 }
