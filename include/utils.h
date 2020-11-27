@@ -20,7 +20,7 @@ Changelog:
 
 namespace utils{
     // Read in an image
-    cv::Mat ReadImage(const std::string& image_path);
+    cv::Mat ReadImage(const std::string& image_path, bool rgb);
     
     // Display a single image
     void DisplayImage(const cv::Mat& img);
@@ -55,6 +55,4 @@ namespace utils{
 
     // This draws the world coordinate frame at the world origin
     void DrawCoordinates();
-
-    cv::Mat Cov3D(double u, double v, double x, double y, double depth);
 }

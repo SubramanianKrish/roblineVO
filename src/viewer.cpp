@@ -39,16 +39,11 @@ void viewer::run(){
 
         utils::DrawCoordinates();
 
-        // Testing 3D line plot
-        cv::Point3d x = cv::Point3d(1.0, 1.0, 1.0);
-        cv::Point3d y = cv::Point3d(-1.0, -1.0, -1.0);
-        std::vector<cv::Point3d> points = {x,y};
-        
         // CRITICAL SECTION
         std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
 
-        if(current_frame != NULL and current_frame->points_3d.size()!= 0){
-            utils::DrawPoints3D(current_frame->points_3d, {1.0, 1.0, 0.0}, 3);
+        if(current_frame != NULL and current_frame->points_3d_im1.size()!= 0){
+            utils::DrawPoints3D(current_frame->points_3d_im1, {1.0, 1.0, 0.0}, 3);
         }
         
         curFrameLock.unlock();
@@ -66,7 +61,7 @@ void viewer::run(){
     pangolin::GetBoundWindow()->RemoveCurrent();
 }
 
-void viewer::updateCurrentFrame(Frame* input_frame){
+void viewer::updateCurrentFrame(FramePair* input_frame){
     std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
     cout << "Frame updating now!" << endl;
     current_frame = input_frame;
