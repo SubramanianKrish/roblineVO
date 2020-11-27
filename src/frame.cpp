@@ -123,19 +123,46 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
     return sampled_indices;
 }
 
+Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
+    // depth noise co-efficients for the kinect [ref: Lu, Song 2015]
+    const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
+    // Our estiamte of how accurate the 2D point sampled on a line is
+    const double sigma_g = 3;
+    double sigma_d = c1*depth*depth + c2*depth + c3;
+
+    Eigen::Matrix3d cov2d = (Eigen::Matrix<double,3,3>()<< 
+                             sigma_g*sigma_g, 0,               0,
+                             0,               sigma_g*sigma_g, 0,
+                             0,               0,               sigma_d*sigma_d).finished();
+
+    Eigen::Matrix3d J = (Eigen::Matrix<double,3,3>()<< 
+                         depth/K(0,0), 0,            u - K(0,2)/depth,
+                         0,            depth/K(1,1), v - K(1,2)/depth,
+                         0,            0,            1).finished();
+
+    Eigen::Matrix3d cov3d = J*cov2d*(J.transpose());
+
+    return cov3d;
+}
+
 Eigen::MatrixXd FramePair::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
     Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-    cout << sampled_lines << endl;
     // This is slow. Need to find a better way: can try K inverse
+    int index = 0;
     for(int i=0; i<sampled_lines.rows(); ++i){
         int u = sampled_lines(i,0), v = sampled_lines(i,1);
         float depth = depth_image.at<uint16_t>(v, u)/5000.0;
-        points_3d(0,i) = (u - K(0,2))*depth/K(0,0);
-        points_3d(1,i) = (v - K(1,2))*depth/K(1,1);
-        points_3d(2,i) = depth;
+        if(depth == 0) continue;
+        points_3d(0,index) = (u - K(0,2))*depth/K(0,0);
+        points_3d(1,index) = (v - K(1,2))*depth/K(1,1);
+        points_3d(2,index) = depth;
+        index++;
+
+        Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
+        cov_G.push_back(covariance_3d);
     }
 
-    return points_3d;
+    return points_3d.leftCols(index);
 }
 
 FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2) :    rgb_image1(rgb_image1), 

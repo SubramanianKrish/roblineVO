@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
     
       robline_viewer->updateCurrentFrame(fpair);
 
-      cv::waitKey(0);
+      cv::waitKey(20);
       
       // Update previous frame
       previous_rgb = rgb_img;

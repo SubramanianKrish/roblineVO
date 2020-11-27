@@ -77,12 +77,17 @@ class FramePair{
         std::vector<float> dist; // distortion parameters
         Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
 
+        std::vector<Eigen::Matrix3d> cov_G;
+
         // Line Sampler in 2D
         Eigen::MatrixXd SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width, std::vector<std::vector<cv::Point2i>>& sampled_lines_2d);
 
         // Reprojection function
         Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
-        
+
+        // Covariance propogator
+        Eigen::Matrix3d Cov3D(double u, double v, double depth);
+
         // ctor which populates members inside
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 
