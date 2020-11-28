@@ -126,7 +126,7 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
 Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     // depth noise co-efficients for the kinect [ref: Lu, Song 2015]
     const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
-    // Our estiamte of how accurate the 2D point sampled on a line is
+    // Our estiamte of how accurate the 2D point sampled on a line is (Not sure if this needs to be changed. May require tuning)
     const double sigma_g = 3;
     double sigma_d = c1*depth*depth + c2*depth + c3;
 

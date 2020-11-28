@@ -91,4 +91,5 @@ class FramePair{
         // ctor which populates members inside
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 
+        
 };
