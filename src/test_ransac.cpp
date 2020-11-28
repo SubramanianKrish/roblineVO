@@ -15,6 +15,14 @@ int main(){
 
     cout << "================" << endl;
 
-    Ransac myRansac;
+    Ransac myRansac(100, 1e-4);
     double dist = myRansac.mahalanobis_distance(X, sigma, A, B);
+    Matrix3Xd temp = MatrixXd::Random(3,100);
+    vector<Matrix3d> cov;
+    for(int i=0; i< 100; ++i){
+        cov.push_back(sigma);
+    }
+    Eigen::MatrixXd temp2 = myRansac.removeOutlierPoints(temp, cov);
+
+    return 0;
 }
