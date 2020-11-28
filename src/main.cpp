@@ -49,9 +49,6 @@ int main(int argc, char* argv[])
   bool isFirst = true;
   cv::Mat previous_rgb, previous_depth;
 
-  // Line object will probably not need it here. Check later
-  // vo_line line_obj();
-
   // Vector to hold objects of FramePair class
   // Each object contains lines found in both images and matches between the frames
   std::vector<FramePair*> pairs;
@@ -74,9 +71,9 @@ int main(int argc, char* argv[])
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       // pairs.push_back(fpair);
-      
-      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_left);
-      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_left);
+
+      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
+      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
       utils::DisplayImage(fpair->rgb_image1);
     
       robline_viewer->updateCurrentFrame(fpair);

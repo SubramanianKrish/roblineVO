@@ -67,26 +67,30 @@ namespace utils{
     }
 
     // Draw 3D points
-    void DrawPoints3D(const Eigen::MatrixXd& points, const std::vector<double>& color, const float& point_size = 0) {
+    void DrawPoints3D(const std::vector<points3d>& sampled_3d_lines, const std::vector<double>& color, const float& point_size = 0) {
         if(point_size > 0) {
             glPointSize(point_size);
         }
         glBegin(GL_POINTS);
         glColor3f(color[0], color[1], color[2]);
-        int size = points.cols();
-        for (int i=0; i<size; ++i){
-            glVertex3d(points(0,i), points(1,i), points(2,i));
+        
+        for(auto& points: sampled_3d_lines){
+            int size = points.cols();
+            for (int i=0; i<size; ++i){
+                glVertex3d(points(0,i), points(1,i), points(2,i));
+            }
         }
         glEnd();
     }
     
     // Draw points sampled on lines in 2D
-    void DrawSampledLines2D(const cv::Mat& img, const std::vector<std::vector<cv::Point2i>>& sampled_lines)
+    void DrawSampledLines2D(const cv::Mat& img, const std::vector<points2d>& sampled_lines)
     {   
         // Ensure auto doesn't create copies. So pass by reference
         for(auto& line: sampled_lines){
-            for(auto& point: line){
-                cv::circle(img, point, 3, CV_RGB(255,0,0), 1);
+            // column major storage of eigen matrices
+            for(int i=0; i < line.size(); i+=2){
+                cv::circle(img, cv::Point2d(*(line.data() + i), *(line.data()+i+1)), 3, CV_RGB(255,0,0), 1);
             }
         }
     }

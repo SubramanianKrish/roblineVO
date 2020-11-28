@@ -63,7 +63,6 @@ void viewer::run(){
 
 void viewer::updateCurrentFrame(FramePair* input_frame){
     std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
-    cout << "Frame updating now!" << endl;
     current_frame = input_frame;
 }
 

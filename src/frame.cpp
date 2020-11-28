@@ -20,41 +20,7 @@ Changelog:
 
 using namespace Eigen;
 
-Eigen::MatrixXd Frame::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
-    Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-    // This is slow. Need to find a better way :'<
-    for(int i=0; i<sampled_lines.rows(); ++i){
-        points_3d(0,i) = (sampled_lines(i,0) - K(0,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/K(0,0);
-        points_3d(1,i) = (sampled_lines(i,1) - K(1,2))*depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1))/K(1,1);
-        points_3d(2,i) = depth_image.at<float>(sampled_lines(i,0), sampled_lines(i,1));
-    }
-
-    return points_3d;
-}
-
-Frame::Frame(const cv::Mat& rgb_image, const cv::Mat& depth_image)
-       : rgb_image(rgb_image), depth_image(depth_image) {
-           
-           // Make the intrinsic matrix [Got from dataset information]
-           K = (Eigen::Matrix<double, 3, 3>() << 517.306408, 0.000000, 318.643040, 
-                                                 0.000000, 516.469215, 255.313989,
-                                                 0.000000, 0.000000, 1.000000).finished();
-
-           // populate distortion
-           dist = {0.262383, -0.953104, -0.005358, 0.002628, 1.163314};
-
-           // populate image height and width
-           im_wd = rgb_image.rows;
-           im_ht = rgb_image.cols;
-
-           // Populate the line class
-           lines = std::make_shared<vo_line>(rgb_image, depth_image);
-
-           // Reprojection function to get 3D points
-           points_3d = Reproject(depth_image, lines->sampled_lines_eig);
-       }
-
-Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int& ht, const int& wd, std::vector<std::vector<cv::Point2i>>& sampled_lines_2d ){
+void FramePair::SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d){
     /*
     Input: lines matrix expected to be of form nx4 with each entry being [x1,y1,x2,y2] 
            where x_i, y_i denote the end points of the lines
@@ -63,14 +29,14 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
     note: different lines have different n_samples based on line length
     */
    
-    int max_samples = 100;
-    u_int num_points = 0;
+    const int max_samples = 100;
 
     // Iterating through row elements is possible in eigen 3.4
     for(int i = 0; i < lines.rows(); i++ ){        
         Eigen::Vector2i p1(lines(i,0), lines(i,1)), p2(lines(i,2), lines(i,3));
         float dist = (p1-p2).norm();
         float n_samples = std::min(max_samples, int(dist));
+        u_int point_index = 0;
 
         // ref: https://stackoverflow.com/questions/28018147/emgucv-get-coordinates-of-pixels-in-a-line-between-two-points
         int x0 = lines(i,0), y0 = lines(i,1), x1 = lines(i,2), y1 = lines(i,3);
@@ -78,14 +44,16 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
         int sx = x0 < x1 ? 1 : -1;
         int sy = y0 < y1 ? 1 : -1;
         int err = dx - dy;
-        // For each line store the index points (need to be 'int')
-        std::vector<cv::Point2i> line_points;
 
-        if (n_samples < 100){
+        // For each line store the index points (need to be 'int')
+        Eigen::Matrix<int, 2, max_samples> line_points;
+
+        if (n_samples < max_samples){
             // Bresenham's algorithm
             while(true){
-                line_points.push_back(cv::Point2i(x0,y0));
-                num_points++;
+                line_points(0, point_index) = x0;
+                line_points(1, point_index) = y0;
+                point_index++;
 
                 if(x0 == x1 && y0 == y1) break;
                 int e2 = 2*err;
@@ -102,25 +70,14 @@ Eigen::MatrixXd FramePair::SampleIndices(const Eigen::MatrixXi& lines, const int
         }
         else{
          for (int i=1; i<=max_samples; ++i){
-            line_points.push_back(cv::Point2i(x0 + (x1 - x0)*(i-1)/(max_samples-1), y0 + (y1 - y0)*(i-1)/(max_samples-1)));
-            num_points++;
+            line_points(0, point_index) = x0 + (x1 - x0)*(i-1)/(max_samples-1);
+            line_points(1, point_index) = y0 + (y1 - y0)*(i-1)/(max_samples-1);
+            point_index++;
          }
         }
         // Add the x and y indices to class variable
-        sampled_lines_2d.push_back(line_points);
+        sampled_lines_2d.push_back(line_points.leftCols(point_index));
     }
-
-    //convert to an eigen matrix of points [this maybe stupidly slow]
-    Eigen::MatrixXd sampled_indices(num_points,2);
-    for (int i=0, eig_index=0; i<lines.rows(); ++i){
-        size_t num_points_in_line = sampled_lines_2d[i].size();
-        for(int j=0; j<num_points_in_line; ++j){
-            Eigen::Vector2d index_2d(sampled_lines_2d[i][j].x, sampled_lines_2d[i][j].y);
-            sampled_indices.row(eig_index++) = index_2d;
-        }
-    }
-
-    return sampled_indices;
 }
 
 Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
@@ -145,24 +102,28 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     return cov3d;
 }
 
-Eigen::MatrixXd FramePair::Reproject(const cv::Mat& depth_image, const Eigen::MatrixXd& sampled_lines){
-    Eigen::MatrixXd points_3d(3, sampled_lines.rows());
-    // This is slow. Need to find a better way: can try K inverse
-    int index = 0;
-    for(int i=0; i<sampled_lines.rows(); ++i){
-        int u = sampled_lines(i,0), v = sampled_lines(i,1);
-        float depth = depth_image.at<uint16_t>(v, u)/5000.0;
-        if(depth == 0) continue;
-        points_3d(0,index) = (u - K(0,2))*depth/K(0,0);
-        points_3d(1,index) = (v - K(1,2))*depth/K(1,1);
-        points_3d(2,index) = depth;
-        index++;
+void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d){
+    
+    for(auto& current_line: sampled_lines){
+        Eigen::MatrixXd P(3, current_line.cols());
+        std::vector<Eigen::Matrix3d> line_covariance;
+        // This is slow. Need to find a better way: can try K inverse
+        int index = 0;
+        for(int i=0; i<current_line.cols(); ++i){
+            int u = current_line(0,i), v = current_line(1,i);
+            float depth = depth_image.at<uint16_t>(v, u)/5000.0;
+            if(depth == 0) continue;
+            P(0,index) = (u - K(0,2))*depth/K(0,0);
+            P(1,index) = (v - K(1,2))*depth/K(1,1);
+            P(2,index) = depth;
+            index++;
 
-        Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
-        cov_G.push_back(covariance_3d);
+            Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
+            line_covariance.push_back(covariance_3d);
+        }
+        s_lines_3d.push_back(P.leftCols(index));
+        cov_G.push_back(line_covariance);
     }
-
-    return points_3d.leftCols(index);
 }
 
 FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2) :    rgb_image1(rgb_image1), 
@@ -176,6 +137,9 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
 
     // populate distortion
     dist = {0.262383, -0.953104, -0.005358, 0.002628, 1.163314};
+
+    // populate image dimensions
+    im_wd = rgb_image1.cols; im_ht = rgb_image1.rows;
 
     // Function returing lines in both images and matches between them contained in a structure element
     pstruct = image_process(rgb_image1, rgb_image2);
@@ -210,12 +174,12 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
 
     }
 
-    // sample lines in image [copying result to member may be slow <to-do> populate inside function]
-    sampled_lines_eig_left = SampleIndices(img1_lines, rgb_image1.rows, rgb_image1.cols, sampled_lines_2d_left);
-    sampled_lines_eig_right = SampleIndices(img2_lines, rgb_image2.rows, rgb_image2.cols, sampled_lines_2d_right);
+    // sample lines in image
+    SampleIndices(img1_lines, sampled_lines_2d_im1);
+    SampleIndices(img2_lines, sampled_lines_2d_im2);
 
     // Reproject left and right image points to 3D
-    points_3d_im1 = Reproject(depth_image1, sampled_lines_eig_left);
-    points_3d_im2 = Reproject(depth_image2, sampled_lines_eig_right);
+    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1);
+    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2);
 
 }
