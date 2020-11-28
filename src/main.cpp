@@ -23,10 +23,6 @@ Changelog:
 #include "line.h"
 #include "viewer.h"
 
-using Eigen::MatrixXd;
-using namespace std;
-using namespace utils;
-
 int main(int argc, char* argv[])
 {
   Eigen::initParallel();
@@ -57,8 +53,8 @@ int main(int argc, char* argv[])
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path, true);
-    cv::Mat depth_img = ReadImage(data_dir + depth_path, false);
+    cv::Mat rgb_img   = utils::ReadImage(data_dir + rgb_path, true);
+    cv::Mat depth_img = utils::ReadImage(data_dir + depth_path, false);
 
     if (isFirst)
     {

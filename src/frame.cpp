@@ -18,8 +18,6 @@ Changelog:
 #include "frame.h"
 #include "utils.h"
 
-using namespace Eigen;
-
 void FramePair::SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d){
     /*
     Input: lines matrix expected to be of form nx4 with each entry being [x1,y1,x2,y2] 

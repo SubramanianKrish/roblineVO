@@ -48,4 +48,11 @@ This should've created the synched_data.txt file in the fr1 data directory
 Pangolin utils: https://github.com/uoip/pangolin/blob/master/python/contrib.hpp [lines, points, cameras]
 
 ### Isses that pop up once in a while:
-If you get librealsense2.so is missing for pangolin, clear build and rebuild Pangolin. Temporary hacky fix.
+If you get librealsense2.so is missing for pangolin, clear build and rebuild Pangolin. Temporary hacky fix.  
+> $ cd to/root/dir/of/pangolin  
+> $ rm -rf build  
+> $ mkdir build  
+> $ cd build  
+> $ cmake ..  
+> $ make  
+> $ sudo make install  
