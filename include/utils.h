@@ -18,9 +18,11 @@ Changelog:
 #include <vector>
 #include <cmath>
 
+#include "frame.h"
+
 namespace utils{
     // Read in an image
-    cv::Mat ReadImage(const std::string& image_path);
+    cv::Mat ReadImage(const std::string& image_path, bool rgb);
     
     // Display a single image
     void DisplayImage(const cv::Mat& img);
@@ -44,17 +46,12 @@ namespace utils{
     void DrawSingleCamera(const cv::Mat& camera_pose, const float& w=1.0, const float& h_ratio=0.75, const float& z_ratio=0.6);
 
     // Draw points in 3D
-    // <TODO> May need to work with cv::mat [nx3] as the input along with their color information
     // <TODO> Add default color information if no color is passed
-    void DrawPoints3D(const Eigen::MatrixXd& points, const std::vector<double>& color, const float& point_size);
+    void DrawPoints3D(const std::vector<points3d>& points, const std::vector<double>& color, const float& point_size);
 
     // Draw points sampled on lines in 2D
-    // <TODO> May need to work with cv::Mat [nx2] points as the input
-    // <TODO> May need to rename as drawpoints2D
-    void DrawSampledLines2D(const cv::Mat& img, const std::vector<std::vector<cv::Point2i>>& sampled_lines);
+    void DrawSampledLines2D(const cv::Mat& img, const std::vector<points2d>& sampled_lines);
 
     // This draws the world coordinate frame at the world origin
     void DrawCoordinates();
-
-    cv::Mat Cov3D(double u, double v, double x, double y, double depth);
 }

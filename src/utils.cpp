@@ -7,9 +7,11 @@
 namespace utils{
     
     // Read in the image
-    // <TODO/possible BUG> We read in depth image as color. Read as 1D image?
-    cv::Mat ReadImage(const std::string& image_path){
-        cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+    cv::Mat ReadImage(const std::string& image_path, bool rgb){
+        cv::Mat img;
+        if(rgb) img = cv::imread(image_path, cv::IMREAD_COLOR);
+        else    img = cv::imread(image_path, cv::IMREAD_UNCHANGED);
+
         return img;
     }
     
@@ -65,47 +67,32 @@ namespace utils{
     }
 
     // Draw 3D points
-    void DrawPoints3D(const Eigen::MatrixXd& points, const std::vector<double>& color, const float& point_size = 0) {
+    void DrawPoints3D(const std::vector<points3d>& sampled_3d_lines, const std::vector<double>& color, const float& point_size = 0) {
         if(point_size > 0) {
             glPointSize(point_size);
         }
         glBegin(GL_POINTS);
         glColor3f(color[0], color[1], color[2]);
-        int size = points.cols();
-        for (int i=0; i<size; ++i){
-            glVertex3d(points(0,i), points(1,i), points(2,i));
+        
+        for(auto& points: sampled_3d_lines){
+            int size = points.cols();
+            for (int i=0; i<size; ++i){
+                glVertex3d(points(0,i), points(1,i), points(2,i));
+            }
         }
         glEnd();
     }
     
     // Draw points sampled on lines in 2D
-    void DrawSampledLines2D(const cv::Mat& img, const std::vector<std::vector<cv::Point2i>>& sampled_lines)
+    void DrawSampledLines2D(const cv::Mat& img, const std::vector<points2d>& sampled_lines)
     {   
         // Ensure auto doesn't create copies. So pass by reference
         for(auto& line: sampled_lines){
-            for(auto& point: line){
-                cv::circle(img, point, 3, CV_RGB(255,0,0), 1);
+            // column major storage of eigen matrices
+            for(int i=0; i < line.size(); i+=2){
+                cv::circle(img, cv::Point2d(*(line.data() + i), *(line.data()+i+1)), 3, CV_RGB(255,0,0), 1);
             }
         }
-    }
-
-    cv::Mat Cov3D(double x, double y, double depth){
-        const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
-        const double sigma_g = 3;
-        const double f = 1.0, cu = 320, cv = 240;
-        double sigma_d = c1*depth*depth + c2*depth + c3;
-
-        cv::Mat cov2d = (cv::Mat_<double>(3,3)<< sigma_g*sigma_g, 0, 0,
-		                                    0, sigma_g*sigma_g, 0,
-		                                    0,  0,  sigma_d);
-
-        cv::Mat J = (cv::Mat_<double>(3,3)<< depth/f, 0, x/depth,
-		                                    0, depth/f, y/depth,
-		                                    0,  0,  1);
-
-        cv::Mat cov3d = J*cov2d*J.t();
-
-        return cov3d;
     }
 
     // Code reference: https://github.com/uoip/pangolin/blob/master/python/contrib.hpp

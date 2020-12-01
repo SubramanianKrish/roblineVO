@@ -29,14 +29,14 @@ class viewer{
         bool hasViewerStopped();
 
         // Update the frame which we want to plot
-        void updateCurrentFrame(Frame* input_frame);
+        void updateCurrentFrame(FramePair* input_frame);
 
         // Mutex to guard data that needs to be plotted (current_frame)
         std::mutex viewerVarsMtx;
         
     private:
         // Pointer to frame whose data we want to plot
-        Frame* current_frame;
+        FramePair* current_frame;
 
         // To close viewer at end of processing
         bool stopViewer;
@@ -44,5 +44,4 @@ class viewer{
 
 
         std::string window_name;
-
 };

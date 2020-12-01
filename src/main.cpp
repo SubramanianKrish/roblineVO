@@ -23,10 +23,6 @@ Changelog:
 #include "line.h"
 #include "viewer.h"
 
-using Eigen::MatrixXd;
-using namespace std;
-using namespace utils;
-
 int main(int argc, char* argv[])
 {
   Eigen::initParallel();
@@ -49,12 +45,6 @@ int main(int argc, char* argv[])
   bool isFirst = true;
   cv::Mat previous_rgb, previous_depth;
 
-  // Line object will probably not need it here. Check later
-  // vo_line line_obj();
-
-  // Vector to hold consecutive frames in the dataset
-  std::vector<Frame> frames;
-
   // Vector to hold objects of FramePair class
   // Each object contains lines found in both images and matches between the frames
   std::vector<FramePair*> pairs;
@@ -63,68 +53,34 @@ int main(int argc, char* argv[])
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path);
-    cv::Mat depth_img = ReadImage(data_dir + depth_path);
+    cv::Mat rgb_img   = utils::ReadImage(data_dir + rgb_path, true);
+    cv::Mat depth_img = utils::ReadImage(data_dir + depth_path, false);
 
-    // Make a frame and populate information internally
-    // Frame* current_frame = new Frame(rgb_img, depth_img);
-
-    // DisplayImage((*current_frame).lines->edge_image);
-
-    // robline_viewer->updateCurrentFrame(current_frame);
-    // // Process two frame information here
-
-    // cv::waitKey(10);
-    
     if (isFirst)
     {
       previous_rgb = rgb_img;
       previous_depth = depth_img;
       isFirst = false;
     }
+    
     else
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
-      pairs.push_back(fpair);
-      DisplayDualImage((*fpair).rgb_image1, (*fpair).rgb_image2);
-      // DisplayDualImage(previous_rgb, rgb_img);
-      cv::waitKey(1);
+      // pairs.push_back(fpair);
+
+      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
+      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
+      utils::DisplayImage(fpair->rgb_image1);
+    
+      robline_viewer->updateCurrentFrame(fpair);
+
+      cv::waitKey(20);
+      
+      // Update previous frame
       previous_rgb = rgb_img;
       previous_depth = depth_img;
     }
-
-
-
-    // Frame frame(rgb_img, depth_img);
-
-    // frames.push_back(frame);
-
-    // if (frames.size() == 2){
-    //   // Create a pair object and store it in a vector for future access
-    //   FramePair pair(frames[0].rgb_image, frames[0].depth_image, rgb_img, depth_img);
-    //   pairs.push_back(pair);
-      
-    //   // Remove the first frame from the vector
-    //   frames.erase(frames.begin());
-    // }
-
-
-    // Eigen::Matrix4i linesP; // will hold the results of the detection
-    
-    // cv::Mat hough_img = DrawHoughLinesP(rgb_img, linesP);
-  
-    // std::vector<std::vector<cv::Point2i>> sampled_lines;
-
-    // sampled_lines = line_obj.SampleIndices(linesP, 480, 640);
-    
-    // DrawSampledLines2D(rgb_img, sampled_lines);
-
   }
-  
-  // for(auto pair: pairs){
-  //   std::cout << pair.pstruct.linesInLeft.size() << std::endl;
-  //   DisplayDualImage(pair.rgb_image1, pair.rgb_image2);
-  // }
 
   // close file
   infile.close();
