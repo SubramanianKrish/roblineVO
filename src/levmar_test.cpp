@@ -30,32 +30,8 @@ register int i, j;
     jac[j++]=(-2 + 2*p[0]-4*ROSD*(p[1]-p[0]*p[0])*p[0]);
     jac[j++]=(2*ROSD*(p[1]-p[0]*p[0]));
   }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-std::vector<double> lm_setup(const Eigen::MatrixXd& points){
-    int n_points = points.rows();
-    Eigen::Vector3d first_row = points.row(0);
-    Eigen::Vector3d last_row = points.row(n_points-1);
-
-    double line_length = (first_row - last_row).norm();    
-    std::vector<double> param_vec;
-
-    param_vec.push_back(points(0,0));
-    param_vec.push_back(points(0,1));
-    param_vec.push_back(points(0,2));
-    for(int i = 1; i < n_points-1; i++)
-    {
-        Eigen::Vector3d row_i = points.row(i);
-        double lambda = ((first_row - row_i).norm())/line_length;
-        param_vec.push_back(lambda);
-        // std::cout << lambda << std::endl;
-    }
-    param_vec.push_back(points(n_points-1,0));
-    param_vec.push_back(points(n_points-1,1));
-    param_vec.push_back(points(n_points-1,2));
-    return param_vec;
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void compute_residual(double *points, double *error, int m, int n, void *data){
     /*
@@ -100,16 +76,8 @@ void compute_residual(double *points, double *error, int m, int n, void *data){
         }
         error_idx = error_idx + 3;
     }
-    
+
 }
-
-
-
-
-// std::vector<double> lm_setup_meaurement_vec(const Eigen::MatrixXd& points, std::vector<double> params){
-//     int n_points = points.rows();
-    
-// }
 
 
 int main(int argc, char* argv[])
@@ -177,6 +145,6 @@ int main(int argc, char* argv[])
                              0.4, 2.5, 1.0,
                              0.6, 3.2, 2.0).finished();
 
-    std::vector<double> out = lm_setup(points);
+    // std::vector<double> out = lm_setup(points);
     return 0;
 }

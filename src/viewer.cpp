@@ -4,7 +4,6 @@
 
 #include <unistd.h>
 #include <iostream>
-using namespace std;
 
 viewer::viewer(const string& window_name) : window_name(window_name), current_frame(NULL), stopViewer(false) {
     // create a window and bind its context to the main thread
@@ -63,7 +62,6 @@ void viewer::run(){
 
 void viewer::updateCurrentFrame(FramePair* input_frame){
     std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
-    cout << "Frame updating now!" << endl;
     current_frame = input_frame;
 }
 

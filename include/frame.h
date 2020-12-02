@@ -8,38 +8,29 @@ Date    : 30 Sep 2020
 
 Changelog:
     subbu - 9/30 - Initial commit
+    ...
+    Subbu - 11/27 - refactor for lines/3D points
 */
 
 #pragma once
 #include <Eigen/Dense>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include "LineMatchingAlgorithm.hh"
-typedef struct PairData pairStruct;
-
 #include <memory>
 
 #include "line.h"
+#include "LineMatchingAlgorithm.hh"
 
-class Frame{
-    public:
-        cv::Mat rgb_image, depth_image;
-        
-        std::shared_ptr<vo_line> lines;
+typedef struct PairData pairStruct;
+// <to-do> push the points2d/3d into robline namespace. There's a cv::point2d too
+typedef Eigen::Matrix<int,    2, Eigen::Dynamic> points2d;
+typedef Eigen::Matrix<double, 3, Eigen::Dynamic> points3d;
 
-        Eigen::MatrixXd points_3d;
-
-        // reprojection function
-        Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
-        // Constructor for a frame
-        Frame(const cv::Mat& rgb_image, const cv::Mat& depth_image);
-
-
-    private:
-        int im_wd, im_ht; // height and width of image
-        std::vector<float> dist; // distortion parameters
-        Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
+struct RootInvCov{
+    int idx1, idx2;
+    std::vector<std::vector<Eigen::Matrix3d>> cov_matrices;
 };
+
 
 class FramePair{
     /*
@@ -58,32 +49,35 @@ class FramePair{
         Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
         Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
         
-        // DrawSampledLines uses these variables
-        std::vector<std::vector<cv::Point2i>> sampled_lines_2d_left;
-        std::vector<std::vector<cv::Point2i>> sampled_lines_2d_right;
+        // Each element of the vector is a set of line samples in 2D
+        std::vector<points2d> sampled_lines_2d_im1, sampled_lines_2d_im2;
 
-        // Sampled 2d points in both images
-        Eigen::MatrixXd sampled_lines_eig_left;
-        Eigen::MatrixXd sampled_lines_eig_right;
-
-        // 3d points in both images
-        Eigen::MatrixXd points_3d_im1;
-        Eigen::MatrixXd points_3d_im2;
+        // 3d points in both images. Each element is set of line samples in 3D
+        std::vector<points3d> points_3d_im1, points_3d_im2;
 
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
+        // Used to store line matches returned by the LBD matcher
         pairStruct pstruct;
         
         // Camera parameters
         std::vector<float> dist; // distortion parameters
         Eigen::Matrix<double, 3, 3> K;  // Camera intrinsics
+        float im_ht, im_wd;
 
-        std::vector<Eigen::Matrix3d> cov_G;
+        // Covariance of 3D points in lines
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im2;
+
+
+        RootInvCov *im1_data;
+        RootInvCov *im2_data;
+
 
         // Line Sampler in 2D
-        Eigen::MatrixXd SampleIndices(const Eigen::MatrixXi& lines, const int& height, const int& width, std::vector<std::vector<cv::Point2i>>& sampled_lines_2d);
+        void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
         // Reprojection function
-        Eigen::MatrixXd Reproject(const cv::Mat& depth, const Eigen::MatrixXd& sampled_lines);
+        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines, std::vector<points3d>& reprojected_points, bool isImg1);
 
         // Covariance propogator
         Eigen::Matrix3d Cov3D(double u, double v, double depth);

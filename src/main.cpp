@@ -23,10 +23,6 @@ Changelog:
 #include "line.h"
 #include "viewer.h"
 
-using Eigen::MatrixXd;
-using namespace std;
-using namespace utils;
-
 int main(int argc, char* argv[])
 {
   Eigen::initParallel();
@@ -49,9 +45,6 @@ int main(int argc, char* argv[])
   bool isFirst = true;
   cv::Mat previous_rgb, previous_depth;
 
-  // Line object will probably not need it here. Check later
-  // vo_line line_obj();
-
   // Vector to hold objects of FramePair class
   // Each object contains lines found in both images and matches between the frames
   std::vector<FramePair*> pairs;
@@ -60,8 +53,8 @@ int main(int argc, char* argv[])
     std::stringstream linestream(image_pair_path);
     linestream >> rgb_time >> rgb_path >> depth_time >> depth_path;
     
-    cv::Mat rgb_img   = ReadImage(data_dir + rgb_path, true);
-    cv::Mat depth_img = ReadImage(data_dir + depth_path, false);
+    cv::Mat rgb_img   = utils::ReadImage(data_dir + rgb_path, true);
+    cv::Mat depth_img = utils::ReadImage(data_dir + depth_path, false);
 
     if (isFirst)
     {
@@ -74,9 +67,9 @@ int main(int argc, char* argv[])
     {
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       // pairs.push_back(fpair);
-      
-      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_left);
-      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_left);
+
+      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
+      utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
       utils::DisplayImage(fpair->rgb_image1);
     
       robline_viewer->updateCurrentFrame(fpair);
