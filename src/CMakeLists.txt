@@ -52,17 +52,18 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/../LBD_and_LineMatching/  
     ${CMAKE_SOURCE_DIR}/../levmar-2.6/
     )
-
+    
+LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../levmar-2.6/build/)
 # Create a static library (compiled and linked completely -> One big executable)
 add_library(${PROJECT_NAME} STATIC 
 ${CMAKE_SOURCE_DIR}/src/utils.cpp
 ${CMAKE_SOURCE_DIR}/src/line.cpp
 ${CMAKE_SOURCE_DIR}/src/frame.cpp
 ${CMAKE_SOURCE_DIR}/src/viewer.cpp
+${CMAKE_SOURCE_DIR}/src/optim.cpp
 )
     
 LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../LBD_and_LineMatching/build/)
-LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../levmar-2.6/build/)
 LINK_DIRECTORIES(${LAPACKBLAS_DIR})
 # Link external libraries (opencv, eigen and our custom library)
 target_link_libraries(
@@ -73,12 +74,13 @@ target_link_libraries(
     ${LAPACKBLAS_LIB_NAMES}
     # ${F2C_LIB_NAME}
     LineMatchingLib
+    levmar
 )
 
 # Add main executable file
 add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-target_link_libraries(main PUBLIC ${PROJECT_NAME} )
+target_link_libraries(main PUBLIC levmar ${PROJECT_NAME} )
+# target_link_libraries(optim PUBLIC levmar ${PROJECT_NAME})
 
 # Add unit_test executables
 # add_executable(levmar_test ${CMAKE_CURRENT_SOURCE_DIR}/levmar_test.cpp)
-# target_link_libraries(levmar_test PUBLIC levmar ${PROJECT_NAME})

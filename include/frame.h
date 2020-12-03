@@ -26,8 +26,8 @@ typedef struct PairData pairStruct;
 typedef Eigen::Matrix<int,    2, Eigen::Dynamic> points2d;
 typedef Eigen::Matrix<double, 3, Eigen::Dynamic> points3d;
 
-struct RootInvCov{
-    int idx1, idx2;
+struct RootInvCovAll{
+    std::vector<int> list_idx1, list_idx2;
     std::vector<std::vector<Eigen::Matrix3d>> cov_matrices;
 };
 
@@ -69,15 +69,15 @@ class FramePair{
         std::vector<std::vector<Eigen::Matrix3d>> cov_G_im2;
 
 
-        RootInvCov *im1_data;
-        RootInvCov *im2_data;
+        RootInvCovAll im1_data;
+        RootInvCovAll im2_data;
 
 
         // Line Sampler in 2D
         void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
         // Reprojection function
-        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines, std::vector<points3d>& reprojected_points, bool isImg1);
+        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines, std::vector<points3d>& reprojected_points, RootInvCovAll* im_data);
 
         // Covariance propogator
         Eigen::Matrix3d Cov3D(double u, double v, double depth);

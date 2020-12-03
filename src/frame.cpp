@@ -17,6 +17,7 @@ Changelog:
 // Custom headers
 #include "frame.h"
 #include "utils.h"
+#include "optim.h"
 
 void FramePair::SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d){
     /*
@@ -100,17 +101,18 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     return cov3d;
 }
 
-void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d, bool isImg1){
+void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d, RootInvCovAll *im_data){
     cv::Mat U = cv::Mat::eye(3,3,CV_64F);
 	cv::Mat W = cv::Mat::ones(3,1,CV_64F);
     std::vector<std::vector<Eigen::Matrix3d>> inv_cov_all_lines;
     std::vector<Eigen::Matrix3d> inv_cov_one_line;
+    
     for(auto& current_line: sampled_lines){
         Eigen::MatrixXd P(3, current_line.cols());
-        std::vector<Eigen::Matrix3d> line_covariance;
         inv_cov_one_line.clear();
         // This is slow. Need to find a better way: can try K inverse
         int index = 0;
+
         for(int i=0; i<current_line.cols(); ++i){
             int u = current_line(0,i), v = current_line(1,i);
             float depth = depth_image.at<uint16_t>(v, u)/5000.0;
@@ -143,24 +145,11 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             
 
             inv_cov_one_line.push_back(CovInvRoot);
-            line_covariance.push_back(covariance_3d);
         }
         s_lines_3d.push_back(P.leftCols(index));
-        if (isImg1)
-        {
-            inv_cov_all_lines.push_back(inv_cov_one_line);
-            cov_G_im1.push_back(line_covariance);
-        }
-        else
-        {
-            inv_cov_all_lines.push_back(inv_cov_one_line);
-            cov_G_im2.push_back(line_covariance);
-        }
+        inv_cov_all_lines.push_back(inv_cov_one_line);
     }
-    if (isImg1)
-        im1_data->cov_matrices = inv_cov_all_lines;
-    else
-        im2_data->cov_matrices = inv_cov_all_lines;
+    im_data->cov_matrices = inv_cov_all_lines;
 }
 
 FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2) :    rgb_image1(rgb_image1), 
@@ -216,8 +205,11 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     SampleIndices(img2_lines, sampled_lines_2d_im2);
 
     // Reproject left and right image points to 3D
-    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1, true);
-    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2, false);
+    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1, &im1_data);
+    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2, &im2_data);
+
+    // std::cout << im1_data.cov_matrices[0].size() << std::endl;
+    optim::nonlinOptimize(points_3d_im1[0], im1_data.cov_matrices[0], 0, im1_data.cov_matrices[0].size()-1);
 
     // TODO: CHECK REPROJECT FUNCTION
     // TODO: ASSIGN STRUCT ELEMENTS HERE (HAVE TO OBTAIN IDX1 AND IDX2)
