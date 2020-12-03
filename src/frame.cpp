@@ -209,7 +209,7 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2, &im2_data);
 
     // std::cout << im1_data.cov_matrices[0].size() << std::endl;
-    optim::nonlinOptimize(points_3d_im1[0], im1_data.cov_matrices[0], 0, im1_data.cov_matrices[0].size()-1);
+    // optim::nonlinOptimize(points_3d_im1[0], im1_data.cov_matrices[0], 0, im1_data.cov_matrices[0].size()-1);
 
     // TODO: CHECK REPROJECT FUNCTION
     // TODO: ASSIGN STRUCT ELEMENTS HERE (HAVE TO OBTAIN IDX1 AND IDX2)
