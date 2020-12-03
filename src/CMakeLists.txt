@@ -61,6 +61,7 @@ ${CMAKE_SOURCE_DIR}/src/line.cpp
 ${CMAKE_SOURCE_DIR}/src/frame.cpp
 ${CMAKE_SOURCE_DIR}/src/viewer.cpp
 ${CMAKE_SOURCE_DIR}/src/optim.cpp
+${CMAKE_SOURCE_DIR}/src/ransac.cpp
 )
     
 LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../LBD_and_LineMatching/build/)
@@ -84,3 +85,7 @@ target_link_libraries(main PUBLIC levmar ${PROJECT_NAME} )
 
 # Add unit_test executables
 # add_executable(levmar_test ${CMAKE_CURRENT_SOURCE_DIR}/levmar_test.cpp)
+target_link_libraries(main PUBLIC ${PROJECT_NAME} )
+
+# add_executable(test_ransac ${CMAKE_CURRENT_SOURCE_DIR}/test_ransac.cpp)
+# target_link_libraries(test_ransac PUBLIC ${PROJECT_NAME} )

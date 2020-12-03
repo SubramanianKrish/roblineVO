@@ -22,6 +22,7 @@ Changelog:
 #include "utils.h"
 #include "line.h"
 #include "viewer.h"
+#include "ransac.h"
 
 int main(int argc, char* argv[])
 {
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
     
     cv::Mat rgb_img   = utils::ReadImage(data_dir + rgb_path, true);
     cv::Mat depth_img = utils::ReadImage(data_dir + depth_path, false);
-
+    
     if (isFirst)
     {
       previous_rgb = rgb_img;
@@ -64,17 +65,18 @@ int main(int argc, char* argv[])
     }
     
     else
-    {
+    { 
+      // Detect lines, match lines between frames, sample 2d line, reproject to 3d, remove outliers
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       // pairs.push_back(fpair);
 
       utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
       utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
       utils::DisplayImage(fpair->rgb_image1);
-    
+      // Update the current vieweing frame
       robline_viewer->updateCurrentFrame(fpair);
 
-      cv::waitKey(20);
+      cv::waitKey(10);
       
       // Update previous frame
       previous_rgb = rgb_img;
