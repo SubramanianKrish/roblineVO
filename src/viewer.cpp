@@ -42,7 +42,12 @@ void viewer::run(){
         std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
 
         if(current_frame != NULL and current_frame->points_3d_im1.size()!= 0){
-            utils::DrawPoints3D(current_frame->rsac_points_3d_im1, {1.0, 1.0, 0.0}, 3);
+            // utils::DrawPoints3D(current_frame->rsac_points_3d_im1, {1.0, 1.0, 0.0}, 3);
+            // utils::DrawPoints3D(current_frame->rsac_points_3d_im2, {0.0, 1.0, 0.0}, 3);
+
+            utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[0], {1.0, 1.0, 0.0}, 3);
+            utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[1], {0.0, 1.0, 0.0}, 3);
+
         }
         
         curFrameLock.unlock();

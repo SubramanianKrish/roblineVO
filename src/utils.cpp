@@ -82,6 +82,21 @@ namespace utils{
         }
         glEnd();
     }
+
+    void DrawSampledLine3D(const points3d& points, const std::vector<double>& color, const float& point_size = 0){
+        if(point_size > 0) {
+            glPointSize(point_size);
+        }
+        glBegin(GL_POINTS);
+        glColor3f(color[0], color[1], color[2]);
+        
+        int size = points.cols();
+        for (int i=0; i<size; ++i){
+            glVertex3d(points(0,i), points(1,i), points(2,i));
+        }
+
+        glEnd();
+    }
     
     // Draw points sampled on lines in 2D
     void DrawSampledLines2D(const cv::Mat& img, const std::vector<points2d>& sampled_lines)
