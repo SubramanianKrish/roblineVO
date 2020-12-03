@@ -22,12 +22,19 @@ Robust Line based Visual odometry using RGB-D images
     + Used for line tracking  
     + Place at the directory where robline is cloned, i.e, should be placed right outside of robline root dir.  
     > git clone https://github.com/XuefengBUPT/LBD_and_LineMatching  
+    + There's a secret sauce file that @awadhut will include later! [email us if it's not here]
 
 6. Arpack++ [Large scale eigen value solver]
     + Used by LBD Line matcher
     > sudo apt-get install arpack++
 
-7. Python 2.7 [Optional]  
+7. Levenberg-Marquardt Opimizer [Download verion 2.6 here: http://users.ics.forth.gr/~lourakis/levmar/levmar-2.6.tgz]  
+    + Place at the directory where robline is cloned, i.e, should be placed right outside of robline root dir.  
+    > sudo apt-get install f2c
+    + Open CMakeLists.txt in levmar-2.6 and make line 90 as:
+    > TARGET_LINK_LIBRARIES(lmdemo ${LIBS} -lm)
+
+8. Python 2.7 [Optional]  
     For running the associate script to time synchronize RGB and Depth images of the TUM Dataset
 
 ## Build instruction
