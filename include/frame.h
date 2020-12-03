@@ -18,6 +18,7 @@ Changelog:
 #include <opencv2/highgui.hpp>
 #include <memory>
 
+#include "ransac.h"
 #include "line.h"
 #include "LineMatchingAlgorithm.hh"
 
@@ -48,6 +49,8 @@ class FramePair{
 
         // 3d points in both images. Each element is set of line samples in 3D
         std::vector<points3d> points_3d_im1, points_3d_im2;
+        // Ransac refined 3d points
+        std::vector<points3d> rsac_points_3d_im1, rsac_points_3d_im2;
 
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         // Used to store line matches returned by the LBD matcher
@@ -59,13 +62,27 @@ class FramePair{
         float im_ht, im_wd;
 
         // Covariance of 3D points in lines
-        std::vector<std::vector<Eigen::Matrix3d>> cov_G;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im2;
+        
+        // EigenaValues of cov matrices [For ransac]
+        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im1;
+        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im2;
+
+        // EigenVectors of cov matrices [For ransac]
+        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im1;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im2;
+
+        // Ransac object for culling outliers
+        Ransac *pointRefine;
 
         // Line Sampler in 2D
         void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
         // Reprojection function
-        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines, std::vector<points3d>& reprojected_points);
+        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines,
+                       std::vector<points3d>& reprojected_points, std::vector<std::vector<Eigen::Matrix3d>>& cov_G,
+                       std::vector<std::vector<Eigen::Vector3d>>& frame_eig_values, std::vector<std::vector<Eigen::Matrix3d>>& frame_eig_vectors);
 
         // Covariance propogator
         Eigen::Matrix3d Cov3D(double u, double v, double depth);

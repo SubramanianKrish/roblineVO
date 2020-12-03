@@ -100,14 +100,21 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     return cov3d;
 }
 
-void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d){
-    
+void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d,
+                          std::vector<std::vector<Eigen::Matrix3d>>& cov_G, std::vector<std::vector<Eigen::Vector3d>>& frame_eigen_values,
+                          std::vector<std::vector<Eigen::Matrix3d>>& frame_eigen_vectors){
     for(auto& current_line: sampled_lines){
         Eigen::MatrixXd P(3, current_line.cols());
+        
         std::vector<Eigen::Matrix3d> line_covariance;
+        std::vector<Eigen::Matrix3d> eigen_vectors;
+        std::vector<Eigen::Vector3d> eigen_values;
+
         // This is slow. Need to find a better way: can try K inverse
         int index = 0;
         for(int i=0; i<current_line.cols(); ++i){
+            
+            // rerpoject to 3D using depth value
             int u = current_line(0,i), v = current_line(1,i);
             float depth = depth_image.at<uint16_t>(v, u)/5000.0;
             if(depth == 0) continue;
@@ -115,12 +122,34 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             P(1,index) = (v - K(1,2))*depth/K(1,1);
             P(2,index) = depth;
             index++;
-
+            
+            // Propogate 2D covariance to 3D
             Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
+
+            // Generate Eigen values of cov for ransac later
+            Eigen::SelfAdjointEigenSolver<covariance> eigensolver(covariance_3d);
+            if (eigensolver.info() != Eigen::Success){
+                cout << "Could not perform eigen decomposition on 3D point's covariance matrix" << endl;
+                cout << covariance_3d << endl;
+                abort();
+            }
+            
+            Eigen::Matrix3d U = eigensolver.eigenvectors();
+            Eigen::Vector3d D = eigensolver.eigenvalues();
+
             line_covariance.push_back(covariance_3d);
+            eigen_values.push_back(D);
+            eigen_vectors.push_back(U);
         }
-        s_lines_3d.push_back(P.leftCols(index));
-        cov_G.push_back(line_covariance);
+        
+        // Need at least 5 3D points to even consider it as a line <Not in paper>
+        if(index >= 5){
+            // Update line information in the frame
+            s_lines_3d.push_back(P.leftCols(index));
+            cov_G.push_back(line_covariance);
+            frame_eigen_values.push_back(eigen_values);
+            frame_eigen_vectors.push_back(eigen_vectors);
+        }
     }
 }
 
@@ -138,6 +167,9 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
 
     // populate image dimensions
     im_wd = rgb_image1.cols; im_ht = rgb_image1.rows;
+
+    // Make ransac object for culling outliers later
+    pointRefine = new Ransac(10, 1);
 
     // Function returing lines in both images and matches between them contained in a structure element
     pstruct = image_process(rgb_image1, rgb_image2);
@@ -177,7 +209,16 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     SampleIndices(img2_lines, sampled_lines_2d_im2);
 
     // Reproject left and right image points to 3D
-    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1);
-    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2);
+    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1, cov_G_im1, cov_eig_values_im1, cov_eig_vectors_im1);
+    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2, cov_G_im2, cov_eig_values_im2, cov_eig_vectors_im2);
+
+    // cull outlier points
+    for(int i=0; i < points_3d_im1.size(); ++i){
+        rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i]));
+    }
+
+    for(int i=0; i < points_3d_im2.size(); ++i){
+        rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i]));
+    }
 
 }

@@ -57,5 +57,5 @@ include_directories(
 add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 target_link_libraries(main PUBLIC ${PROJECT_NAME} )
 
-add_executable(test_ransac ${CMAKE_CURRENT_SOURCE_DIR}/test_ransac.cpp)
-target_link_libraries(test_ransac PUBLIC ${PROJECT_NAME} )
+# add_executable(test_ransac ${CMAKE_CURRENT_SOURCE_DIR}/test_ransac.cpp)
+# target_link_libraries(test_ransac PUBLIC ${PROJECT_NAME} )
