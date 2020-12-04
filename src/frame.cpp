@@ -83,7 +83,7 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     // depth noise co-efficients for the kinect [ref: Lu, Song 2015]
     const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
     // Our estiamte of how accurate the 2D point sampled on a line is (Not sure if this needs to be changed. May require tuning)
-    const double sigma_g = 3;
+    const double sigma_g = 1;
     double sigma_d = c1*depth*depth + c2*depth + c3;
 
     Eigen::Matrix3d cov2d = (Eigen::Matrix<double,3,3>()<< 
@@ -92,8 +92,8 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
                              0,               0,               sigma_d*sigma_d).finished();
 
     Eigen::Matrix3d J = (Eigen::Matrix<double,3,3>()<< 
-                         depth/K(0,0), 0,            u - K(0,2)/depth,
-                         0,            depth/K(1,1), v - K(1,2)/depth,
+                         depth/K(0,0), 0,            (u - K(0,2))/K(0,0),
+                         0,            depth/K(1,1), (v - K(1,2))/K(1,1),
                          0,            0,            1).finished();
 
     Eigen::Matrix3d cov3d = J*cov2d*(J.transpose());
@@ -107,7 +107,7 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
     
     std::vector<Eigen::Matrix3d> inv_cov_one_line;
     std::vector<std::vector<Eigen::Matrix3d>> inv_cov_all_lines;
-
+    bool flag = false;
     for(auto& current_line: sampled_lines){
         Eigen::MatrixXd P(3, current_line.cols());
         
@@ -132,7 +132,10 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             
             // Propogate 2D covariance to 3D
             Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
-
+            if (flag){
+                std::cout << "Covariance Matrix = " << std::endl;
+                std::cout << covariance_3d << std::endl;
+            }
             // Generate Eigen values of cov for ransac later
             Eigen::SelfAdjointEigenSolver<covariance> eigensolver(covariance_3d);
             if (eigensolver.info() != Eigen::Success){
@@ -144,7 +147,12 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             Eigen::Matrix3d U = eigensolver.eigenvectors();
             Eigen::Vector3d D = eigensolver.eigenvalues();
             Eigen::Matrix3d CovInvRoot = ((D.array().inverse()).sqrt()).matrix().asDiagonal() * U.transpose();
-
+            if (flag){
+                std::cout << "Multiplying All matrices to reconstruct = \n" << U*U.transpose() << std::endl;
+                std::cout << "InvCovRoot inside reproject = \n" << CovInvRoot << std::endl;
+                std::cout << "Multiplying with inverse = \n" << covariance_3d*CovInvRoot.transpose()*CovInvRoot << std::endl;
+                flag = false;
+            }
             line_covariance.push_back(covariance_3d);
             eigen_values.push_back(D);
             eigen_vectors.push_back(U);
@@ -161,7 +169,6 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             inv_cov_all_lines.push_back(inv_cov_one_line);
         }
     }
-    // Ask subbu about the if condition
     im_data->cov_matrices = inv_cov_all_lines;
 }
 
@@ -231,7 +238,7 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     // TODO: ASSIGN STRUCT ELEMENTS HERE (HAVE TO OBTAIN IDX1 AND IDX2)
 
     // cull outlier points
-    std::cout << "C1" << std::endl;
+    // std::cout << "C1" << std::endl;
     for(int i=0; i < points_3d_im1.size(); ++i){
         rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i]));
     }
@@ -239,22 +246,26 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     for(int i=0; i < points_3d_im2.size(); ++i){
         rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i]));
     }
-    std::cout << "C2" << std::endl;
+    // std::cout << "C2" << std::endl;
     // std::cout << rsac_points_3d_im1.size() << std::endl;
     // std::cout << rsac_points_3d_im2.size() << std::endl;
     // std::cout << im1_data.cov_matrices.size() << std::endl;
     // std::cout << im2_data.cov_matrices.size() << std::endl;
 
-    std::cout << "C3" << std::endl;
+    std::cout << "Starting Im1" << std::endl;
+    int Inp;
     for(int i = 0; i < rsac_points_3d_im1.size(); i++){
+    // std::cout << points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
     points3d optimized_line1 = optim::nonlinOptimize(points_3d_im1[i], im1_data.cov_matrices[i], 0, im1_data.cov_matrices[i].size()-1);
     optimized_lines_im1.push_back(optimized_line1);
+    // std::cin >> Inp;
     }
+
+    std::cout << "Starting Im2" << std::endl;
     for(int i = 0; i < rsac_points_3d_im2.size(); i++){
     points3d optimized_line2 = optim::nonlinOptimize(points_3d_im2[i], im2_data.cov_matrices[i], 0, im2_data.cov_matrices[i].size()-1);
     optimized_lines_im2.push_back(optimized_line2);
     }
-    std::cout << "C4" << std::endl;
 }
 
     // points3d FramePair::OptimizeFrames(){

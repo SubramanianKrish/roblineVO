@@ -18,7 +18,7 @@ namespace optim{
         int idx2 = dptr->idx2;
         
         Eigen::Vector3d startPoint = (Eigen::Matrix<double,3,1>()<< points[idx1], points[idx1+1], points[idx1+2]).finished();
-        Eigen::Vector3d endPoint = (Eigen::Matrix<double,3,1>()<< points[idx2], points[idx2+1], points[idx2+2]).finished();
+        Eigen::Vector3d endPoint = (Eigen::Matrix<double,3,1>()<< points[idx2+2], points[idx2+3], points[idx2+4]).finished();
         std::vector<Eigen::Matrix3d> cov_mats = dptr->cov_matrices;
 
         for(int i = 0; i < (cov_mats).size(); i++)
@@ -31,7 +31,7 @@ namespace optim{
                 error[error_idx + 2] = vec(2);
                 para_idx = para_idx + 3;
             }
-            else if(i == idx2)
+            else if(i == idx2 + 2)
             {
                 Eigen::Vector3d vec = cov_mats[i] * endPoint;
                 error[error_idx] = vec(0);
@@ -56,9 +56,9 @@ namespace optim{
         // std::cout << "Check pt 1" << std::endl;
         std::vector<double> param_vector;
         std::vector<double> ref_vector;
-        Eigen::Vector3d startPoint = (Eigen::Matrix<double,3,1>()<< line3D(0,line_idx1), line3D(1,line_idx1), line3D(2, line_idx1)).finished();
+        Eigen::Vector3d startPoint = line3D.col(line_idx1);
         // std::cout << "Check pt 2" << std::endl;
-        Eigen::Vector3d endPoint = (Eigen::Matrix<double,3,1>()<< line3D(0, line_idx2), line3D(1, line_idx2), line3D(2, line_idx2)).finished();
+        Eigen::Vector3d endPoint = line3D.col(line_idx2);
         double lambda;
         double line_length = (startPoint-endPoint).norm();
         int n_points = inv_cov_one_line.size();
@@ -81,7 +81,7 @@ namespace optim{
                 param_vector.push_back(line3D(2,j));
             }
             else
-            {   Eigen::Vector3d intermediate_point = (Eigen::Matrix<double,3,1>()<< line3D(0, j), line3D(1, j), line3D(2, j)).finished();
+            {   Eigen::Vector3d intermediate_point = line3D.col(j);
                 double dist = (startPoint - intermediate_point).norm();
                 // std::cout << line_length << " " << dist << std::endl;
                 double lambda = dist/line_length;
@@ -89,7 +89,7 @@ namespace optim{
                 param_vector.push_back(lambda);
             }
 
-            Eigen::Vector3d point = (Eigen::Matrix<double,3,1>()<< line3D(0, j), line3D(1, j), line3D(2, j)).finished();
+            Eigen::Vector3d point = line3D.col(j);
             Eigen::Vector3d transformed_point = inv_cov_one_line[j]*point;
             ref_vector.push_back(transformed_point(0));
             ref_vector.push_back(transformed_point(1));
@@ -114,15 +114,41 @@ namespace optim{
         data.idx1 = line_idx1;
         data.idx2 = line_idx2;
         double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
+        
         opts[0] = LM_INIT_MU; //
-        opts[1] = 1E-10; // gradient threshold, original 1e-15
-        opts[2] = 1E-20; // relative para change threshold? original 1e-50
+        opts[1] = 1E-15; // gradient threshold, original 1e-15
+        opts[2] = 1E-50; // relative para change threshold? original 1e-50
         opts[3] = 1E-20; // error threshold (below it, stop)
         opts[4] = LM_DIFF_DELTA;
-        // std::cout << "Check pt 6" << " " << para[5] << std::endl;
-        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 20, opts, info, NULL, NULL, (void*)&data);
-        // std::cout << "Check pt 7" << " " << para[5] << std::endl;
 
+        double *err = new double[numRef];
+        // std::cout << "Check pt 6" << " " << para[5] << std::endl;
+        // std::cout << "InvCovRoot inside optimizer = " << inv_cov_one_line[0] << std::endl;
+        // std::cout << "InvCov inside optimizer = " << inv_cov_one_line[0]*inv_cov_one_line[0].transpose() << std::endl;
+        compute_residual(para, err, numPara, numRef, &data);
+        float sum = 0;
+        for (int i = 0; i < numRef; i++)
+        {
+            sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
+        }
+        std::cout << " ------------------------------------------------ " << std::endl;
+        std::cout << "Sum before = " << sum << std::endl;
+        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 100, opts, info, NULL, NULL, (void*)&data);
+
+        compute_residual(para, err, numPara, numRef, &data);
+        sum = 0;
+        for (int i = 0; i < numRef; i++)
+        {
+            sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
+        }
+        std::cout << "Sum After = " << sum << std::endl;
+
+
+        // std::cout << "Check pt 7" << " " << para[5] << std::endl;
+        // for (int i = 0; i < param_vector.size(); i++)
+        // {
+        //     std::cout << param_vector[i] << " " << para[i] << std::endl;
+        // }
         points3d optimized_line(3, inv_cov_one_line.size());
         int para_idx = 0;
         Eigen::Vector3d sPoint = (Eigen::Matrix<double,3,1>()<< para[0], para[1], para[2]).finished();
