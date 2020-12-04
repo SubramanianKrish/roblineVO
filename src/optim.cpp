@@ -52,18 +52,18 @@ namespace optim{
 
     }
 
-    void nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d> inv_cov_one_line, int line_idx1, int line_idx2){
-        std::cout << "Check pt 1" << std::endl;
+    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d> inv_cov_one_line, int line_idx1, int line_idx2){
+        // std::cout << "Check pt 1" << std::endl;
         std::vector<double> param_vector;
         std::vector<double> ref_vector;
         Eigen::Vector3d startPoint = (Eigen::Matrix<double,3,1>()<< line3D(0,line_idx1), line3D(1,line_idx1), line3D(2, line_idx1)).finished();
-        std::cout << "Check pt 2" << std::endl;
+        // std::cout << "Check pt 2" << std::endl;
         Eigen::Vector3d endPoint = (Eigen::Matrix<double,3,1>()<< line3D(0, line_idx2), line3D(1, line_idx2), line3D(2, line_idx2)).finished();
         double lambda;
         double line_length = (startPoint-endPoint).norm();
         int n_points = inv_cov_one_line.size();
         param_vector.clear();
-        std::cout << "Check pt 3" << std::endl;
+        // std::cout << "Check pt 3" << std::endl;
         for (int j = 0; j < n_points; j++)
         {    
             if (j == line_idx1)
@@ -95,7 +95,7 @@ namespace optim{
             ref_vector.push_back(transformed_point(1));
             ref_vector.push_back(transformed_point(2));
         }
-        std::cout << "Check pt 4" << std::endl;
+        // std::cout << "Check pt 4" << std::endl;
         int numPara = param_vector.size();
 
         double* para = new double[numPara];
@@ -108,7 +108,7 @@ namespace optim{
         for ( int i=0; i<numRef; ++i) {
             ref[i] = ref_vector[i];
         }
-        std::cout << "Check pt 5" << std::endl;
+        // std::cout << "Check pt 5" << std::endl;
         optim::RootInvCov data;
         data.cov_matrices = inv_cov_one_line;
         data.idx1 = line_idx1;
@@ -119,11 +119,43 @@ namespace optim{
         opts[2] = 1E-20; // relative para change threshold? original 1e-50
         opts[3] = 1E-20; // error threshold (below it, stop)
         opts[4] = LM_DIFF_DELTA;
-        std::cout << "Check pt 6" << " " << para[5] << std::endl;
-        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 100, opts, info, NULL, NULL, (void*)&data);
-        std::cout << "Check pt 7" << " " << para[5] << std::endl;
+        // std::cout << "Check pt 6" << " " << para[5] << std::endl;
+        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 20, opts, info, NULL, NULL, (void*)&data);
+        // std::cout << "Check pt 7" << " " << para[5] << std::endl;
+
+        points3d optimized_line(3, inv_cov_one_line.size());
+        int para_idx = 0;
+        Eigen::Vector3d sPoint = (Eigen::Matrix<double,3,1>()<< para[0], para[1], para[2]).finished();
+        Eigen::Vector3d ePoint = (Eigen::Matrix<double,3,1>()<< para[numPara - 3], para[numPara - 2], para[numPara - 1]).finished();
+        for (int i = 0; i < inv_cov_one_line.size(); i++)
+        {
+            if (i == line_idx1)
+            {
+                optimized_line(0,i) = para[para_idx];
+                optimized_line(1,i) = para[para_idx + 1];
+                optimized_line(2,i) = para[para_idx + 2];
+                para_idx = para_idx + 3;
+            }
+            else if (i == line_idx2)
+            {
+                optimized_line(0,i) = para[para_idx];
+                optimized_line(1,i) = para[para_idx + 1];
+                optimized_line(2,i) = para[para_idx + 2];
+                para_idx = para_idx + 3;
+            }
+            else
+            {
+                optimized_line(0,i) = para[para_idx]*sPoint(0) + (1 - para[para_idx])*ePoint(0);
+                optimized_line(1,i) = para[para_idx]*sPoint(1) + (1 - para[para_idx])*ePoint(1);
+                optimized_line(2,i) = para[para_idx]*sPoint(2) + (1 - para[para_idx])*ePoint(2);
+                para_idx = para_idx + 1;
+            }
+        }
+
         delete[] para;
         delete[] ref;
+        return optimized_line;
+    
     }
     
 }

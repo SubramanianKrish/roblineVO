@@ -161,6 +161,7 @@ void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d
             inv_cov_all_lines.push_back(inv_cov_one_line);
         }
     }
+    // Ask subbu about the if condition
     im_data->cov_matrices = inv_cov_all_lines;
 }
 
@@ -214,7 +215,8 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
         */
 
     }
-
+    // std::cout << "Im1 line " << img1_lines.rows() << " " << img1_lines.cols() << std::endl;
+    // std::cout << "Im2 line " << img2_lines.rows() << " " << img2_lines.cols() << std::endl;
     // sample lines in image
     SampleIndices(img1_lines, sampled_lines_2d_im1);
     SampleIndices(img2_lines, sampled_lines_2d_im2);
@@ -224,12 +226,12 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2, cov_G_im2, cov_eig_values_im2, cov_eig_vectors_im2, &im2_data);
 
     // std::cout << im1_data.cov_matrices[0].size() << std::endl;
-    // optim::nonlinOptimize(points_3d_im1[0], im1_data.cov_matrices[0], 0, im1_data.cov_matrices[0].size()-1);
 
     // TODO: CHECK REPROJECT FUNCTION
     // TODO: ASSIGN STRUCT ELEMENTS HERE (HAVE TO OBTAIN IDX1 AND IDX2)
 
     // cull outlier points
+    std::cout << "C1" << std::endl;
     for(int i=0; i < points_3d_im1.size(); ++i){
         rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i]));
     }
@@ -237,5 +239,24 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     for(int i=0; i < points_3d_im2.size(); ++i){
         rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i]));
     }
+    std::cout << "C2" << std::endl;
+    // std::cout << rsac_points_3d_im1.size() << std::endl;
+    // std::cout << rsac_points_3d_im2.size() << std::endl;
+    // std::cout << im1_data.cov_matrices.size() << std::endl;
+    // std::cout << im2_data.cov_matrices.size() << std::endl;
 
+    std::cout << "C3" << std::endl;
+    for(int i = 0; i < rsac_points_3d_im1.size(); i++){
+    points3d optimized_line1 = optim::nonlinOptimize(points_3d_im1[i], im1_data.cov_matrices[i], 0, im1_data.cov_matrices[i].size()-1);
+    optimized_lines_im1.push_back(optimized_line1);
+    }
+    for(int i = 0; i < rsac_points_3d_im2.size(); i++){
+    points3d optimized_line2 = optim::nonlinOptimize(points_3d_im2[i], im2_data.cov_matrices[i], 0, im2_data.cov_matrices[i].size()-1);
+    optimized_lines_im2.push_back(optimized_line2);
+    }
+    std::cout << "C4" << std::endl;
 }
+
+    // points3d FramePair::OptimizeFrames(){
+        
+    // }

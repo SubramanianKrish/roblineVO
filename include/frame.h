@@ -56,7 +56,7 @@ class FramePair{
         // 3d points in both images. Each element is set of line samples in 3D
         std::vector<points3d> points_3d_im1, points_3d_im2;
         // Ransac refined 3d points
-        std::vector<points3d> rsac_points_3d_im1, rsac_points_3d_im2;
+        std::vector<points3d> rsac_points_3d_im1, rsac_points_3d_im2, optimized_lines_im1, optimized_lines_im2;
 
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         // Used to store line matches returned by the LBD matcher
@@ -71,6 +71,7 @@ class FramePair{
         std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1;
         std::vector<std::vector<Eigen::Matrix3d>> cov_G_im2;
 
+        // Structs containing all covariance matrices
         RootInvCovAll im1_data;
         RootInvCovAll im2_data;
 
