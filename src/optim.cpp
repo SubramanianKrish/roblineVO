@@ -178,6 +178,49 @@ namespace optim{
             }
         }
 
+        Eigen::MatrixXd Jac = Eigen::MatrixXd::Zero(numPara, numRef);
+        Jac(0,0) = 1;
+        Jac(1,1) = 1;
+        Jac(2,2) = 1;
+        Jac(numPara-3,numRef-3) = 1;
+        Jac(numPara-2,numRef-2) = 1;
+        Jac(numPara-1,numRef-1) = 1;
+        // Eigen::Vector3d row = Eigen::Matrix::Zero()
+        // int idx_para = 3
+        int id_1 = 0;
+        int id_2 = numPara-3;
+        int col = 0;
+        for (int i = 0; i < numPara ; i++)
+        {
+            double parameter = para[i];
+            if(i < id_1 + 3)
+            {
+                col = col + 1;
+                continue;
+            }
+            else if (i > id_2)
+            {
+                col = col + 1;
+                continue;
+            }
+            else
+            {
+                Jac(0, col) = parameter;
+                Jac(1, col + 1) = parameter;
+                Jac(2, col + 2) = parameter;
+
+                Jac(numPara - 3, col) = 1 - parameter;
+                Jac(numPara - 2, col+1) = 1 - parameter;
+                Jac(numPara - 1, col+2) = 1 - parameter;
+
+                Jac(i, col) = para[0] - para[numPara - 3];
+                Jac(i, col+1) = para[1] - para[numPara - 2];
+                Jac(i, col+2) = para[2] - para[numPara - 1];
+
+                col = col + 3;
+            }
+        }
+        // std::cout << Jac << std::endl;
         delete[] para;
         delete[] ref;
         return optimized_line;
