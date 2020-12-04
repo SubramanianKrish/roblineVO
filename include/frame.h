@@ -90,10 +90,12 @@ class FramePair{
         void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
         // Reprojection function
-        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines,
-                       std::vector<points3d>& reprojected_points, std::vector<std::vector<Eigen::Matrix3d>>& cov_G,
-                       std::vector<std::vector<Eigen::Vector3d>>& frame_eig_values, std::vector<std::vector<Eigen::Matrix3d>>& frame_eig_vectors,
-                       RootInvCovAll* im_data);
+        void Reproject();
+
+        // Reproject one line
+        int reprojectSingleLine(const cv::Mat& depth_image, const points2d& current_line, points3d& P, std::vector<Eigen::Matrix3d>& line_covariance,
+                                std::vector<Eigen::Vector3d>& eigen_values, std::vector<Eigen::Matrix3d>& eigen_vectors,
+                                std::vector<Eigen::Matrix3d>& inv_cov_one_line);
 
         // Covariance propogator
         Eigen::Matrix3d Cov3D(double u, double v, double depth);

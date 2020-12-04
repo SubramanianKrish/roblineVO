@@ -47,6 +47,8 @@ void viewer::run(){
 
             utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1.back(), {1.0, 1.0, 0.0}, 3);
             utils::DrawSampledLine3D(current_frame->optimized_lines_im1.back(), {0.0, 1.0, 0.0}, 3);
+            // utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[0], {1.0, 1.0, 0.0}, 3);
+            // utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[1], {0.0, 1.0, 0.0}, 3);
 
         }
         
