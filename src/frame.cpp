@@ -236,11 +236,29 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
 
     // cull outlier points
     for(int i=0; i < points_3d_im1.size(); ++i){
-        rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i]));
+        std::vector<Eigen::Matrix3d> updated_covariance;
+        std::vector<Eigen::Matrix3d> updated_inv_root_covariance;
+        
+        // point update
+        rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i],
+                                     updated_covariance, updated_inv_root_covariance, cov_G_im1[i], im1_data.cov_matrices[i]));
+
+        // cov update
+        cov_G_im1[i] = updated_covariance;
+        im1_data.cov_matrices[i] = updated_inv_root_covariance;
     }
 
     for(int i=0; i < points_3d_im2.size(); ++i){
-        rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i]));
+        std::vector<Eigen::Matrix3d> updated_covariance;
+        std::vector<Eigen::Matrix3d> updated_inv_root_covariance;
+        
+        // point update
+        rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i],
+                                    updated_covariance, updated_inv_root_covariance, cov_G_im2[i], im2_data.cov_matrices[i]));
+
+        // cov update
+        cov_G_im2[i] = updated_covariance;
+        im2_data.cov_matrices[i] = updated_inv_root_covariance;
     }
 
 }

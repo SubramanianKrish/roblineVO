@@ -125,95 +125,44 @@ namespace optim{
         delete[] para;
         delete[] ref;
     }
+
+    double m_dist(const Eigen::Vector3d& X, const Eigen::Matrix3d& sigma_x, const Eigen::Vector3d& A, const Eigen::Vector3d& B)
+    {   // <To-do> remove redundant code. Same already exists in ransac. Need to make a common method
+    
+        // Generate Eigen values of cov for ransac later
+        Eigen::SelfAdjointEigenSolver<covariance> eigensolver(sigma_x);
+        if (eigensolver.info() != Eigen::Success){
+            cout << "Could not perform eigen decomposition on 3D point's covariance matrix" << endl;
+            cout << sigma_x << endl;
+            abort();
+        }
+        
+        Eigen::Matrix3d U = eigensolver.eigenvectors();
+        Eigen::Vector3d D = eigensolver.eigenvalues();
+
+        // Apply affine transform to points
+        Eigen::Vector3d A_affine = ((D.array().inverse()).sqrt()).matrix().asDiagonal() * U.transpose() * (A - X);
+        Eigen::Vector3d B_affine = ((D.array().inverse()).sqrt()).matrix().asDiagonal() * U.transpose() * (B - X);
+
+        double distance = A_affine.cross(B_affine).norm()/(A_affine - B_affine).norm();
+
+        return distance;
+    }
+
+    double computeRtError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, 
+                          const Eigen::Vector3d& A1, const Eigen::Vector3d& B1,
+                          const Eigen::Matrix3d& cov_A1, const Eigen::Matrix3d& cov_B1,
+                          const Eigen::Vector3d& A2, const Eigen::Vector3d& B2,
+                          const Eigen::Matrix3d& cov_A2, const Eigen::Matrix3d& cov_B2
+                          )
+    {
+        double r[4];
+        r[0] = m_dist(R*A1 + t, R*cov_A1*(R.transpose()), A2, B2);
+        r[1] = m_dist(R.transpose()*A2 - R.transpose()*t, R.transpose()*cov_A2*R, A1, B1);
+        r[2] = m_dist(R*B1+t, R*cov_B1*(R.transpose()), A2, B2);
+        r[3] = m_dist(R.transpose()*B2 - R.transpose()*t, R.transpose()*cov_B2*R, A1, B1);
+
+        return r[0]*r[0] + r[1]*r[1] + r[2]*r[2] + r[3]*r[3];
+    }
     
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/* Rosenbrock function, global minimum at (1, 1) */
-// void ros(double *p, double *x, int m, int n, void *data)
-// {
-// register int i;
-
-//   for(i=0; i<n; ++i)
-//     x[i]=((1.0-p[0])*(1.0-p[0]) + ROSD*(p[1]-p[0]*p[0])*(p[1]-p[0]*p[0]));
-// }
-
-// void jacros(double *p, double *jac, int m, int n, void *data)
-// {
-// register int i, j;
-
-//   for(i=j=0; i<n; ++i){
-//     jac[j++]=(-2 + 2*p[0]-4*ROSD*(p[1]-p[0]*p[0])*p[0]);
-//     jac[j++]=(2*ROSD*(p[1]-p[0]*p[0]));
-//   }
-// }
-
-// int main(int argc, char* argv[])
-// { 
-//     register int i, j;
-//     int problem, ret;
-//     double p[5], // 5 is max(2, 3, 5)
-//         x[16]; // 16 is max(2, 3, 5, 6, 16)
-//     int m, n;
-//     double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
-//     char *probname[]={
-//         "Rosenbrock function",
-//         "modified Rosenbrock problem",
-//         "Powell's function",
-//         "Wood's function",
-//         "Meyer's (reformulated) problem",
-//         "Osborne's problem",
-//         "helical valley function",
-//         "Boggs & Tolle's problem #3",
-//         "Hock - Schittkowski problem #28",
-//         "Hock - Schittkowski problem #48",
-//         "Hock - Schittkowski problem #51",
-//         "Hock - Schittkowski problem #01",
-//         "Hock - Schittkowski modified problem #21",
-//         "hatfldb problem",
-//         "hatfldc problem",
-//         "equilibrium combustion problem",
-//         "Hock - Schittkowski modified #1 problem #52",
-//         "Schittkowski modified problem #235",
-//         "Boggs & Tolle modified problem #7",
-//         "Hock - Schittkowski modified #2 problem #52",
-//         "Hock - Schittkowski modified problem #76",
-//     };
-
-//     opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
-//     opts[4]= LM_DIFF_DELTA; // relevant only if the Jacobian is approximated using finite differences; specifies forward differencing 
-//     // opts[4]=-LM_DIFF_DELTA; // specifies central differencing to approximate Jacobian; more accurate but more expensive to compute!
-
-//     problem = 0; // Meyer's (reformulated) problem
-
-//     m=2; n=2;
-//     p[0]=-1.2; p[1]=1.0;
-//     for(i=0; i<n; i++) x[i]=0.0;
-//     ret=dlevmar_der(ros, jacros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL); // with analytic Jacobian
-//     //ret=dlevmar_dif(ros, p, x, m, n, 1000, opts, info, NULL, NULL, NULL);  // no Jacobian
-
-//     printf("Results for %s:\n", probname[problem]);
-//     printf("Levenberg-Marquardt returned %d in %g iter, reason %g\nSolution: ", ret, info[5], info[6]);
-
-//     for(i=0; i<m; ++i)
-//         printf("%.7g ", p[i]);
-
-//     printf("\n\nMinimization info:\n");
-
-//     for(i=0; i<LM_INFO_SZ; ++i)
-//         printf("%g ", info[i]);
-
-//     printf("\n");
-
-//     std::cout << "Ho Gaya" << std::endl;
-
-
-//     Eigen::MatrixXd points = (Eigen::Matrix<double,3,3>()<< 
-//                              1.0, 3.1, 0.5,
-//                              0.4, 2.5, 1.0,
-//                              0.6, 3.2, 2.0).finished();
-
-//     // std::vector<double> out = lm_setup(points);
-//     return 0;
-// }

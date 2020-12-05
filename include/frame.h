@@ -47,8 +47,7 @@ class FramePair{
         cv::Mat depth_image2;
 
         // Lines in eigen form of both frames
-        Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
-        Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
+        Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines, img2_lines;
         
         // Each element of the vector is a set of line samples in 2D
         std::vector<points2d> sampled_lines_2d_im1, sampled_lines_2d_im2;
@@ -68,19 +67,16 @@ class FramePair{
         float im_ht, im_wd;
 
         // Covariance of 3D points in lines
-        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1;
-        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im2;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1, cov_G_im2;
 
         RootInvCovAll im1_data;
         RootInvCovAll im2_data;
 
         // EigenaValues of cov matrices [For ransac]
-        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im1;
-        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im2;
+        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im1, cov_eig_values_im2;
 
         // EigenVectors of cov matrices [For ransac]
-        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im1;
-        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im2;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im1, cov_eig_vectors_im2;
 
         // Ransac object for culling outliers
         Ransac *pointRefine;
