@@ -263,10 +263,10 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
         im2_data.cov_matrices[i] = updated_inv_root_covariance;
     }
     // std::cout << "C2" << std::endl;
-    std::cout << rsac_points_3d_im1.size() << std::endl;
-    std::cout << rsac_points_3d_im2.size() << std::endl;
-    std::cout << im1_data.cov_matrices.size() << std::endl;
-    std::cout << im2_data.cov_matrices.size() << std::endl;
+    // std::cout << rsac_points_3d_im1.size() << std::endl;
+    // std::cout << rsac_points_3d_im2.size() << std::endl;
+    // std::cout << im1_data.cov_matrices.size() << std::endl;
+    // std::cout << im2_data.cov_matrices.size() << std::endl;
 
     std::cout << "Starting Im1" << std::endl;
     int Inp;
@@ -274,18 +274,18 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     std::vector<Eigen::Matrix3d> line1_endPt_covs, line2_endPt_covs;
 
     for(int i = 0; i < rsac_points_3d_im1.size(); i++){
-    std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
-    points3d optimized_line1 = optim::nonlinOptimize(rsac_points_3d_im1[i], im1_data.cov_matrices[i], , line1_endPt_covs, 0, im1_data.cov_matrices[i].size()-1);
+    // std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
+    points3d optimized_line1 = optim::nonlinOptimize(rsac_points_3d_im1[i], im1_data.cov_matrices[i], cov_G_im1[i], line1_endPt_covs, 0, im1_data.cov_matrices[i].size()-1);
     optimized_lines_im1.push_back(optimized_line1);
     // std::cin >> Inp;
     }
 
     std::cout << "Starting Im2" << std::endl;
     for(int i = 0; i < rsac_points_3d_im2.size(); i++){
-    points3d optimized_line2 = optim::nonlinOptimize(rsac_points_3d_im2[i], im2_data.cov_matrices[i], , line2_endPt_covs, 0, im2_data.cov_matrices[i].size()-1);
+    points3d optimized_line2 = optim::nonlinOptimize(rsac_points_3d_im2[i], im2_data.cov_matrices[i], cov_G_im2[i], line2_endPt_covs, 0, im2_data.cov_matrices[i].size()-1);
     optimized_lines_im2.push_back(optimized_line2);
     }
-
+    std::cout << "Matrix Size" << line1_endPt_covs.size() << " " << line2_endPt_covs.size() << std::endl;
 
 
 

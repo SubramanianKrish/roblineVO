@@ -53,17 +53,17 @@ namespace optim{
     }
 
     points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<Eigen::Matrix3d>& endPt_covs, int line_idx1, int line_idx2){
-        std::cout << "Check pt 1" << std::endl;
+        // std::cout << "Check pt 1" << std::endl;
         std::vector<double> param_vector;
         std::vector<double> ref_vector;
         Eigen::Vector3d startPoint = line3D.col(line_idx1);
-        std::cout << "Check pt 2" << std::endl;
+        // std::cout << "Check pt 2" << std::endl;
         Eigen::Vector3d endPoint = line3D.col(line_idx2);
         double lambda;
         double line_length = (startPoint-endPoint).norm();
         int n_points = inv_cov_one_line.size();
         param_vector.clear();
-        std::cout << "Check pt 3" << std::endl;
+        // std::cout << "Check pt 3" << std::endl;
         for (int j = 0; j < n_points; j++)
         {    
             if (j == line_idx1)
@@ -95,7 +95,7 @@ namespace optim{
             ref_vector.push_back(transformed_point(1));
             ref_vector.push_back(transformed_point(2));
         }
-        std::cout << "Check pt 4" << std::endl;
+        // std::cout << "Check pt 4" << std::endl;
         int numPara = param_vector.size();
 
         double* para = new double[numPara];
@@ -108,7 +108,7 @@ namespace optim{
         for ( int i=0; i<numRef; ++i) {
             ref[i] = ref_vector[i];
         }
-        std::cout << "Check pt 5" << std::endl;
+        // std::cout << "Check pt 5" << std::endl;
         optim::RootInvCov data;
         data.cov_matrices = inv_cov_one_line;
         data.idx1 = line_idx1;
@@ -125,23 +125,23 @@ namespace optim{
         // std::cout << "Check pt 6" << " " << para[5] << std::endl;
         // std::cout << "InvCovRoot inside optimizer = " << inv_cov_one_line[0] << std::endl;
         // std::cout << "InvCov inside optimizer = " << inv_cov_one_line[0]*inv_cov_one_line[0].transpose() << std::endl;
-        compute_residual(para, err, numPara, numRef, &data);
-        float sum = 0;
-        for (int i = 0; i < numRef; i++)
-        {
-            sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
-        }
-        std::cout << " ------------------------------------------------ " << std::endl;
-        std::cout << "Sum before = " << sum << std::endl;
-        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 100, opts, info, NULL, NULL, (void*)&data);
+        // compute_residual(para, err, numPara, numRef, &data);
+        // float sum = 0;
+        // for (int i = 0; i < numRef; i++)
+        // {
+        //     sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
+        // }
+        // std::cout << " ------------------------------------------------ " << std::endl;
+        // std::cout << "Sum before = " << sum << std::endl;
+        int ret = dlevmar_dif(compute_residual, para, ref, numPara, numRef, 20, opts, info, NULL, NULL, (void*)&data);
 
-        compute_residual(para, err, numPara, numRef, &data);
-        sum = 0;
-        for (int i = 0; i < numRef; i++)
-        {
-            sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
-        }
-        std::cout << "Sum After = " << sum << std::endl;
+        // compute_residual(para, err, numPara, numRef, &data);
+        // sum = 0;
+        // for (int i = 0; i < numRef; i++)
+        // {
+        //     sum = sum + (err[i]-ref[i])*(err[i]-ref[i]);
+        // }
+        // std::cout << "Sum After = " << sum << std::endl;
 
 
         // std::cout << "Check pt 7" << " " << para[5] << std::endl;
