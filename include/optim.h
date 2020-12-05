@@ -31,6 +31,12 @@ namespace optim
         }
     };
 
+    struct OptimizedLinesWithCov{
+        const std::vector<Eigen::Matrix3Xd> *l1, *l2;
+        const std::vector<std::vector<Eigen::Matrix3d>> *l1_cov, *l2_cov;
+        const std::vector<int> *matches;
+    };
+    
     struct RootInvCov{
         int idx1, idx2;
         std::vector<Eigen::Matrix3d> cov_matrices;
@@ -64,4 +70,11 @@ namespace optim
 
     double computeDistError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& X, 
                             const Eigen::Vector3d& A, const Eigen::Vector3d& B);
+
+    void computeRotTransResidual(double *params, double *residuals, int n_params, int n_meas, void *data);
+
+    void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
+                        const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
+                        const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov);
+
 }

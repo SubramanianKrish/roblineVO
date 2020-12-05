@@ -271,10 +271,6 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     std::cout << "Starting Im1" << std::endl;
     int Inp;
 
-    std::vector<std::vector<Eigen::Matrix3d>> line1_endPt_covs, line2_endPt_covs;
-
-
-
     for(int i = 0; i < rsac_points_3d_im1.size(); i++){
     // std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
     points3d optimized_line1 = optim::nonlinOptimize(rsac_points_3d_im1[i], im1_data.cov_matrices[i], cov_G_im1[i], line1_endPt_covs, 0, im1_data.cov_matrices[i].size()-1);

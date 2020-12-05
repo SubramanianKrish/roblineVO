@@ -78,6 +78,9 @@ class FramePair{
 
         // EigenVectors of cov matrices [For ransac]
         std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im1, cov_eig_vectors_im2;
+        
+        // covariance of endpoints of optimized matrix
+        std::vector<std::vector<Eigen::Matrix3d>> line1_endPt_covs, line2_endPt_covs;
 
         // Ransac object for culling outliers
         Ransac *pointRefine;

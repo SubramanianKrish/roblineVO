@@ -1,3 +1,5 @@
+#include <Eigen/Geometry>
+
 #include "optim.h"
 #include <fstream>
 namespace optim{
@@ -300,6 +302,89 @@ namespace optim{
         r[3] = m_dist(R.transpose()*B2 - R.transpose()*t, R.transpose()*cov_B2*R, A1, B1);
         // std::cout << r[0]*r[0] << " " << r[1]*r[1] << " " << r[2]*r[2] << " " << r[3]*r[3] << "\n";
         return r[0]*r[0] + r[1]*r[1] + r[2]*r[2] + r[3]*r[3];
+    }
+
+    void computeRotTransResidual(double *params, double *residuals, int n_params, int n_meas, void *data)
+    {
+        // Unpack parameters into rotation and translation
+        Eigen::Vector3d rot_vec, t;
+        rot_vec << params[0], params[1], params[2];
+        t       << params[3], params[4], params[5];
+        Eigen::AngleAxisd rotation_rodriguez(rot_vec.norm(), rot_vec.normalized());
+        Eigen::Matrix3d R = rotation_rodriguez.toRotationMatrix();
+
+        // Ensure data gets accessed by the right pointer
+        struct OptimizedLinesWithCov *line_data = (struct OptimizedLinesWithCov*)data;
+
+        int residual_index = 0;
+        // Iterate through matches to compute residual
+        for(int i: *(line_data->matches))
+        {
+            Eigen::Vector3d A1, B1, A2, B2;
+            Eigen::Matrix3d cov_A1, cov_B1, cov_A2, cov_B2;
+
+            A1 = (*(line_data->l1))[i].col(0);
+            B1 = (*(line_data->l1))[i].rightCols(1);
+            A2 = (*(line_data->l2))[i].col(0);
+            B2 = (*(line_data->l2))[i].rightCols(1);
+
+            cov_A1 = (*(line_data->l1_cov))[i][0];
+            cov_B1 = (*(line_data->l1_cov))[i][1];
+            cov_A2 = (*(line_data->l2_cov))[i][0];
+            cov_B2 = (*(line_data->l2_cov))[i][1];
+            
+            residuals[residual_index] = m_dist(R*A1 + t, R*cov_A1*(R.transpose()), A2, B2);
+            residuals[residual_index+1] = m_dist(R.transpose()*A2 - R.transpose()*t, R.transpose()*cov_A2*R, A1, B1);
+            residuals[residual_index+2] = m_dist(R*B1+t, R*cov_B1*(R.transpose()), A2, B2);
+            residuals[residual_index+3] = m_dist(R.transpose()*B2 - R.transpose()*t, R.transpose()*cov_B2*R, A1, B1);
+
+            residual_index += 4;
+        }   
+
+    }
+
+    void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
+                          const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
+                          const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov)
+    {
+        const int n_params = 6;                    // rotation + translation parameters
+        int       n_meas = 4*matches.size();  // each match has a 4 part residual
+        
+        const int n_iters = 10;
+
+        double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
+        
+        opts[0] = LM_INIT_MU; 
+        opts[1] = 1E-15; // gradient threshold, original 1e-15
+        opts[2] = 1E-50; // relative para change threshold? original 1e-50
+        opts[3] = 1E-20; // error threshold (below it, stop)
+        opts[4] = LM_DIFF_DELTA;
+
+        // Pack required information into data - start with converting rotation into rodrigues
+        Eigen::AngleAxisd rodrigues_rotation(R);
+        Eigen::Matrix<double, 6, 1> param_vector;
+        param_vector << rodrigues_rotation.angle()*rodrigues_rotation.axis(), t; // copies data over
+        double *optim_params = new double[6];
+        optim_params = param_vector.data();
+        
+        // populate target error i.e, zero
+        Eigen::Matrix<double, Eigen::Dynamic, 1> meas_vector = Eigen::MatrixXd::Zero(n_meas, 1);
+        double *optim_meas = new double[n_meas];
+        optim_meas = meas_vector.data();
+
+        // Pack in additional data
+        struct OptimizedLinesWithCov line_data;
+        line_data.l1      = &im1_lines;
+        line_data.l2      = &im2_lines;
+        line_data.l1_cov  = &im1_line_cov;
+        line_data.l2_cov  = &im2_line_cov;
+        line_data.matches = &matches;
+
+        // Run Levenberg-Marquardt
+        int ret = dlevmar_dif(computeRotTransResidual, optim_params, optim_meas, n_params, n_meas,
+                              n_iters, opts, info, NULL, NULL, (void*)&line_data);
+        delete[] optim_params;
+        delete[] optim_meas;
     }
     
     double computeDistError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& X, 
