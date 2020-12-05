@@ -52,6 +52,9 @@ namespace utils{
     // Draw points sampled on lines in 2D
     void DrawSampledLines2D(const cv::Mat& img, const std::vector<points2d>& sampled_lines);
 
+    // Draw a line in 3D using the points sampled on the line
+    void DrawSampledLine3D(const points3d& points, const std::vector<double>& color, const float& point_size);
+
     // This draws the world coordinate frame at the world origin
     void DrawCoordinates();
 }

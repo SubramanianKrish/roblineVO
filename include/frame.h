@@ -18,6 +18,7 @@ Changelog:
 #include <opencv2/highgui.hpp>
 #include <memory>
 
+#include "ransac.h"
 #include "line.h"
 #include "LineMatchingAlgorithm.hh"
 
@@ -25,6 +26,12 @@ typedef struct PairData pairStruct;
 // <to-do> push the points2d/3d into robline namespace. There's a cv::point2d too
 typedef Eigen::Matrix<int,    2, Eigen::Dynamic> points2d;
 typedef Eigen::Matrix<double, 3, Eigen::Dynamic> points3d;
+
+struct RootInvCovAll{
+    std::vector<int> list_idx1, list_idx2;
+    std::vector<std::vector<Eigen::Matrix3d>> cov_matrices;
+};
+
 
 class FramePair{
     /*
@@ -40,14 +47,15 @@ class FramePair{
         cv::Mat depth_image2;
 
         // Lines in eigen form of both frames
-        Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines;
-        Eigen::Matrix<int, Eigen::Dynamic, 4> img2_lines;
+        Eigen::Matrix<int, Eigen::Dynamic, 4> img1_lines, img2_lines;
         
         // Each element of the vector is a set of line samples in 2D
         std::vector<points2d> sampled_lines_2d_im1, sampled_lines_2d_im2;
 
         // 3d points in both images. Each element is set of line samples in 3D
         std::vector<points3d> points_3d_im1, points_3d_im2;
+        // Ransac refined 3d points
+        std::vector<points3d> rsac_points_3d_im1, rsac_points_3d_im2, optimized_lines_im1, optimized_lines_im2;
 
         // Structure FramePair defined in ../LBD_and_LineMatching/LineStructure.hh
         // Used to store line matches returned by the LBD matcher
@@ -59,13 +67,31 @@ class FramePair{
         float im_ht, im_wd;
 
         // Covariance of 3D points in lines
-        std::vector<std::vector<Eigen::Matrix3d>> cov_G;
+        std::vector<std::vector<Eigen::Matrix3d>> cov_G_im1, cov_G_im2;
+
+        // Structs containing all covariance matrices
+        RootInvCovAll im1_data;
+        RootInvCovAll im2_data;
+
+        // EigenaValues of cov matrices [For ransac]
+        std::vector<std::vector<Eigen::Vector3d>> cov_eig_values_im1, cov_eig_values_im2;
+
+        // EigenVectors of cov matrices [For ransac]
+        std::vector<std::vector<Eigen::Matrix3d>> cov_eig_vectors_im1, cov_eig_vectors_im2;
+
+        // Ransac object for culling outliers
+        Ransac *pointRefine;
 
         // Line Sampler in 2D
         void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
         // Reprojection function
-        void Reproject(const cv::Mat& depth, const std::vector<points2d>& sampled_lines, std::vector<points3d>& reprojected_points);
+        void Reproject();
+
+        // Reproject one line
+        int reprojectSingleLine(const cv::Mat& depth_image, const points2d& current_line, points3d& P, std::vector<Eigen::Matrix3d>& line_covariance,
+                                std::vector<Eigen::Vector3d>& eigen_values, std::vector<Eigen::Matrix3d>& eigen_vectors,
+                                std::vector<Eigen::Matrix3d>& inv_cov_one_line);
 
         // Covariance propogator
         Eigen::Matrix3d Cov3D(double u, double v, double depth);
@@ -73,4 +99,5 @@ class FramePair{
         // ctor which populates members inside
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
 
+        
 };

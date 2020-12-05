@@ -17,6 +17,7 @@ Changelog:
 // Custom headers
 #include "frame.h"
 #include "utils.h"
+#include "optim.h"
 
 void FramePair::SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d){
     /*
@@ -81,8 +82,8 @@ void FramePair::SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d
 Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     // depth noise co-efficients for the kinect [ref: Lu, Song 2015]
     const double c1 = 0.00273, c2 = 0.00074, c3 = -0.00058;
-    // Our estiamte of how accurate the 2D point sampled on a line is
-    const double sigma_g = 3;
+    // Our estiamte of how accurate the 2D point sampled on a line is (Not sure if this needs to be changed. May require tuning)
+    const double sigma_g = 1;
     double sigma_d = c1*depth*depth + c2*depth + c3;
 
     Eigen::Matrix3d cov2d = (Eigen::Matrix<double,3,3>()<< 
@@ -91,8 +92,8 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
                              0,               0,               sigma_d*sigma_d).finished();
 
     Eigen::Matrix3d J = (Eigen::Matrix<double,3,3>()<< 
-                         depth/K(0,0), 0,            u - K(0,2)/depth,
-                         0,            depth/K(1,1), v - K(1,2)/depth,
+                         depth/K(0,0), 0,            (u - K(0,2))/K(0,0),
+                         0,            depth/K(1,1), (v - K(1,2))/K(1,1),
                          0,            0,            1).finished();
 
     Eigen::Matrix3d cov3d = J*cov2d*(J.transpose());
@@ -100,28 +101,74 @@ Eigen::Matrix3d FramePair::Cov3D(double u, double v, double depth){
     return cov3d;
 }
 
-void FramePair::Reproject(const cv::Mat& depth_image, const std::vector<points2d>& sampled_lines, std::vector<points3d>& s_lines_3d){
+void FramePair::Reproject(){
     
-    for(auto& current_line: sampled_lines){
-        Eigen::MatrixXd P(3, current_line.cols());
-        std::vector<Eigen::Matrix3d> line_covariance;
-        // This is slow. Need to find a better way: can try K inverse
-        int index = 0;
-        for(int i=0; i<current_line.cols(); ++i){
-            int u = current_line(0,i), v = current_line(1,i);
-            float depth = depth_image.at<uint16_t>(v, u)/5000.0;
-            if(depth == 0) continue;
-            P(0,index) = (u - K(0,2))*depth/K(0,0);
-            P(1,index) = (v - K(1,2))*depth/K(1,1);
-            P(2,index) = depth;
-            index++;
+    std::size_t num_lines = sampled_lines_2d_im1.size();
+    int l1_num_points, l2_num_points;
 
-            Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
-            line_covariance.push_back(covariance_3d);
+    for(int i=0; i < num_lines; ++i){
+        std::vector<Eigen::Matrix3d> l1_cov, l1_eig_vec, l2_cov, l2_eig_vec, l1_inv_cov, l2_inv_cov; 
+        std::vector<Eigen::Vector3d> l1_eig_val, l2_eig_val;
+
+        Eigen::Matrix3Xd P1(3, sampled_lines_2d_im1[i].cols()), P2(3, sampled_lines_2d_im2[i].cols());
+        l1_num_points = reprojectSingleLine(depth_image1, sampled_lines_2d_im1[i], P1, l1_cov, l1_eig_val, l1_eig_vec, l1_inv_cov);
+        l2_num_points = reprojectSingleLine(depth_image2, sampled_lines_2d_im2[i], P2, l2_cov, l2_eig_val, l2_eig_vec, l2_inv_cov);
+
+        if(l1_num_points and l2_num_points){
+            // Update line 1 details
+            points_3d_im1.push_back(P1.leftCols(l1_num_points));
+            cov_G_im1.push_back(l1_cov);
+            cov_eig_values_im1.push_back(l1_eig_val);
+            cov_eig_vectors_im1.push_back(l1_eig_vec);
+            im1_data.cov_matrices.push_back(l1_inv_cov);
+            
+            // Update line 2 details
+            points_3d_im2.push_back(P2.leftCols(l2_num_points));
+            cov_G_im2.push_back(l2_cov);
+            cov_eig_values_im2.push_back(l2_eig_val);
+            cov_eig_vectors_im2.push_back(l2_eig_vec);
+            im2_data.cov_matrices.push_back(l2_inv_cov);
         }
-        s_lines_3d.push_back(P.leftCols(index));
-        cov_G.push_back(line_covariance);
     }
+}
+
+int FramePair::reprojectSingleLine(const cv::Mat& depth_image, const points2d& current_line, points3d& P, std::vector<Eigen::Matrix3d>& line_covariance,
+                                   std::vector<Eigen::Vector3d>& eigen_values, std::vector<Eigen::Matrix3d>& eigen_vectors,
+                                   std::vector<Eigen::Matrix3d>& inv_cov_one_line){
+    int index = 0;
+    for(int i=0; i<current_line.cols(); ++i){
+        
+        // rerpoject to 3D using depth value
+        int u = current_line(0,i), v = current_line(1,i);
+        float depth = depth_image.at<uint16_t>(v, u)/5000.0;
+        if(depth == 0) continue;
+        P(0,index) = (u - K(0,2))*depth/K(0,0);
+        P(1,index) = (v - K(1,2))*depth/K(1,1);
+        P(2,index) = depth;
+        index++;
+        
+        // Propogate 2D covariance to 3D
+        Eigen::Matrix3d covariance_3d = Cov3D(u, v, depth);
+
+        // Generate Eigen values of cov for ransac later
+        Eigen::SelfAdjointEigenSolver<covariance> eigensolver(covariance_3d);
+        if (eigensolver.info() != Eigen::Success){
+            cout << "Could not perform eigen decomposition on 3D point's covariance matrix" << endl;
+            cout << covariance_3d << endl;
+            abort();
+        }
+        
+        Eigen::Matrix3d U = eigensolver.eigenvectors();
+        Eigen::Vector3d D = eigensolver.eigenvalues();
+        Eigen::Matrix3d CovInvRoot = ((D.array().inverse()).sqrt()).matrix().asDiagonal() * U.transpose();
+
+        line_covariance.push_back(covariance_3d);
+        eigen_values.push_back(D);
+        eigen_vectors.push_back(U);
+        inv_cov_one_line.push_back(CovInvRoot);
+    }
+    
+    return index >= 5 ? index : 0;
 }
 
 FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2) :    rgb_image1(rgb_image1), 
@@ -138,6 +185,9 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
 
     // populate image dimensions
     im_wd = rgb_image1.cols; im_ht = rgb_image1.rows;
+
+    // Make ransac object for culling outliers later
+    pointRefine = new Ransac(10, 1);
 
     // Function returing lines in both images and matches between them contained in a structure element
     pstruct = image_process(rgb_image1, rgb_image2);
@@ -171,13 +221,76 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
         */
 
     }
-
+    // std::cout << "Im1 line " << img1_lines.rows() << " " << img1_lines.cols() << std::endl;
+    // std::cout << "Im2 line " << img2_lines.rows() << " " << img2_lines.cols() << std::endl;
     // sample lines in image
     SampleIndices(img1_lines, sampled_lines_2d_im1);
     SampleIndices(img2_lines, sampled_lines_2d_im2);
 
     // Reproject left and right image points to 3D
-    Reproject(depth_image1, sampled_lines_2d_im1, points_3d_im1);
-    Reproject(depth_image2, sampled_lines_2d_im2, points_3d_im2);
+    Reproject();
+
+    // optim::nonlinOptimize(points_3d_im1[0], im1_data.cov_matrices[0], 0, im1_data.cov_matrices[0].size()-1);
+
+    // TODO: CHECK REPROJECT FUNCTION
+    // TODO: ASSIGN STRUCT ELEMENTS HERE (HAVE TO OBTAIN IDX1 AND IDX2)
+
+    // cull outlier points
+    // std::cout << "C1" << std::endl;
+    for(int i=0; i < points_3d_im1.size(); ++i){
+        std::vector<Eigen::Matrix3d> updated_covariance;
+        std::vector<Eigen::Matrix3d> updated_inv_root_covariance;
+        
+        // point update
+        rsac_points_3d_im1.push_back(pointRefine->removeOutlierPoints(points_3d_im1[i], cov_eig_values_im1[i], cov_eig_vectors_im1[i],
+                                     updated_covariance, updated_inv_root_covariance, cov_G_im1[i], im1_data.cov_matrices[i]));
+
+        // cov update
+        cov_G_im1[i] = updated_covariance;
+        im1_data.cov_matrices[i] = updated_inv_root_covariance;
+    }
+
+    for(int i=0; i < points_3d_im2.size(); ++i){
+        std::vector<Eigen::Matrix3d> updated_covariance;
+        std::vector<Eigen::Matrix3d> updated_inv_root_covariance;
+        
+        // point update
+        rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i],
+                                    updated_covariance, updated_inv_root_covariance, cov_G_im2[i], im2_data.cov_matrices[i]));
+
+        // cov update
+        cov_G_im2[i] = updated_covariance;
+        im2_data.cov_matrices[i] = updated_inv_root_covariance;
+    }
+    // std::cout << "C2" << std::endl;
+    // std::cout << rsac_points_3d_im1.size() << std::endl;
+    // std::cout << rsac_points_3d_im2.size() << std::endl;
+    // std::cout << im1_data.cov_matrices.size() << std::endl;
+    // std::cout << im2_data.cov_matrices.size() << std::endl;
+
+    std::cout << "Starting Im1" << std::endl;
+    int Inp;
+
+    std::vector<Eigen::Matrix3d> line1_endPt_covs, line2_endPt_covs;
+
+    for(int i = 0; i < rsac_points_3d_im1.size(); i++){
+    // std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
+    points3d optimized_line1 = optim::nonlinOptimize(rsac_points_3d_im1[i], im1_data.cov_matrices[i], cov_G_im1[i], line1_endPt_covs, 0, im1_data.cov_matrices[i].size()-1);
+    optimized_lines_im1.push_back(optimized_line1);
+    // std::cin >> Inp;
+    }
+
+    std::cout << "Starting Im2" << std::endl;
+    for(int i = 0; i < rsac_points_3d_im2.size(); i++){
+    points3d optimized_line2 = optim::nonlinOptimize(rsac_points_3d_im2[i], im2_data.cov_matrices[i], cov_G_im2[i], line2_endPt_covs, 0, im2_data.cov_matrices[i].size()-1);
+    optimized_lines_im2.push_back(optimized_line2);
+    }
+    std::cout << "Matrix Size" << line1_endPt_covs.size() << " " << line2_endPt_covs.size() << std::endl;
+
+
 
 }
+
+    // points3d FramePair::OptimizeFrames(){
+        
+    // }

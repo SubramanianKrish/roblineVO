@@ -21,7 +21,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 # Add subdirectory with a sub-project
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../LBD_and_LineMatching ${CMAKE_CURRENT_BINARY_DIR}/../../LBD_and_LineMatching/build)
-
+add_subdirectory(${CMAKE_SOURCE_DIR}/../levmar-2.6 ${CMAKE_CURRENT_BINARY_DIR}/../../levmar-2.6/build)
 # Specify build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
