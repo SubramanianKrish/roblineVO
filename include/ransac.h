@@ -30,6 +30,9 @@ public:
     double mahalanobis_distance(const point3d& X, const point3d& A, const point3d& B, const Eigen::Vector3d& D, const Eigen::Matrix3d& U);
 
     // Returns a set of 3D points that are considered inliers to the estimated line
-    Eigen::Matrix3Xd removeOutlierPoints(const Eigen::Matrix3Xd& linepoints, const std::vector<Eigen::Vector3d>& eig_val, const std::vector<Eigen::Matrix3d>& eig_vector);
+    Eigen::Matrix3Xd removeOutlierPoints(const Eigen::Matrix3Xd& linepoints, const std::vector<Eigen::Vector3d>& eig_val,
+                                         const std::vector<Eigen::Matrix3d>& eig_vector, std::vector<Eigen::Matrix3d>& updated_covariance,
+                                         std::vector<Eigen::Matrix3d>& updated_inv_root_covariance, const std::vector<Eigen::Matrix3d>& cov_G,
+                                         const std::vector<Eigen::Matrix3d>& inv_cov_G);
 
 };
