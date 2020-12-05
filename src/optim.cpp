@@ -52,18 +52,18 @@ namespace optim{
 
     }
 
-    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d> inv_cov_one_line, int line_idx1, int line_idx2){
-        // std::cout << "Check pt 1" << std::endl;
+    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<Eigen::Matrix3d>& endPt_covs, int line_idx1, int line_idx2){
+        std::cout << "Check pt 1" << std::endl;
         std::vector<double> param_vector;
         std::vector<double> ref_vector;
         Eigen::Vector3d startPoint = line3D.col(line_idx1);
-        // std::cout << "Check pt 2" << std::endl;
+        std::cout << "Check pt 2" << std::endl;
         Eigen::Vector3d endPoint = line3D.col(line_idx2);
         double lambda;
         double line_length = (startPoint-endPoint).norm();
         int n_points = inv_cov_one_line.size();
         param_vector.clear();
-        // std::cout << "Check pt 3" << std::endl;
+        std::cout << "Check pt 3" << std::endl;
         for (int j = 0; j < n_points; j++)
         {    
             if (j == line_idx1)
@@ -95,7 +95,7 @@ namespace optim{
             ref_vector.push_back(transformed_point(1));
             ref_vector.push_back(transformed_point(2));
         }
-        // std::cout << "Check pt 4" << std::endl;
+        std::cout << "Check pt 4" << std::endl;
         int numPara = param_vector.size();
 
         double* para = new double[numPara];
@@ -108,7 +108,7 @@ namespace optim{
         for ( int i=0; i<numRef; ++i) {
             ref[i] = ref_vector[i];
         }
-        // std::cout << "Check pt 5" << std::endl;
+        std::cout << "Check pt 5" << std::endl;
         optim::RootInvCov data;
         data.cov_matrices = inv_cov_one_line;
         data.idx1 = line_idx1;
@@ -198,7 +198,7 @@ namespace optim{
                 col = col + 1;
                 continue;
             }
-            else if (i > id_2)
+            else if (i >= id_2)
             {
                 col = col + 1;
                 continue;
@@ -220,6 +220,17 @@ namespace optim{
                 col = col + 3;
             }
         }
+
+        int size = covariance_matrices.size();
+        Eigen::MatrixXd temp(3*size, 3*size);
+        for (int i = 0; i < size; i++)
+        {
+            temp.block(3*i, 3*i, 3, 3) = covariance_matrices[i];
+        }
+
+        Eigen::MatrixXd estimated_cov = Jac*temp.inverse()*Jac.transpose();
+        endPt_covs.push_back(estimated_cov.topLeftCorner(3,3));
+        endPt_covs.push_back(estimated_cov.bottomRightCorner(3,3));
         // std::cout << Jac << std::endl;
         delete[] para;
         delete[] ref;

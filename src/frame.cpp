@@ -245,25 +245,32 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
         rsac_points_3d_im2.push_back(pointRefine->removeOutlierPoints(points_3d_im2[i], cov_eig_values_im2[i], cov_eig_vectors_im2[i]));
     }
     // std::cout << "C2" << std::endl;
-    // std::cout << rsac_points_3d_im1.size() << std::endl;
-    // std::cout << rsac_points_3d_im2.size() << std::endl;
-    // std::cout << im1_data.cov_matrices.size() << std::endl;
-    // std::cout << im2_data.cov_matrices.size() << std::endl;
+    std::cout << rsac_points_3d_im1.size() << std::endl;
+    std::cout << rsac_points_3d_im2.size() << std::endl;
+    std::cout << im1_data.cov_matrices.size() << std::endl;
+    std::cout << im2_data.cov_matrices.size() << std::endl;
 
     std::cout << "Starting Im1" << std::endl;
     int Inp;
+
+    std::vector<Eigen::Matrix3d> line1_endPt_covs, line2_endPt_covs;
+
     for(int i = 0; i < rsac_points_3d_im1.size(); i++){
-    // std::cout << points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
-    points3d optimized_line1 = optim::nonlinOptimize(points_3d_im1[i], im1_data.cov_matrices[i], 0, im1_data.cov_matrices[i].size()-1);
+    std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
+    points3d optimized_line1 = optim::nonlinOptimize(rsac_points_3d_im1[i], im1_data.cov_matrices[i], , line1_endPt_covs, 0, im1_data.cov_matrices[i].size()-1);
     optimized_lines_im1.push_back(optimized_line1);
     // std::cin >> Inp;
     }
 
     std::cout << "Starting Im2" << std::endl;
     for(int i = 0; i < rsac_points_3d_im2.size(); i++){
-    points3d optimized_line2 = optim::nonlinOptimize(points_3d_im2[i], im2_data.cov_matrices[i], 0, im2_data.cov_matrices[i].size()-1);
+    points3d optimized_line2 = optim::nonlinOptimize(rsac_points_3d_im2[i], im2_data.cov_matrices[i], , line2_endPt_covs, 0, im2_data.cov_matrices[i].size()-1);
     optimized_lines_im2.push_back(optimized_line2);
     }
+
+
+
+
 }
 
     // points3d FramePair::OptimizeFrames(){
