@@ -32,6 +32,10 @@ struct RootInvCovAll{
     std::vector<std::vector<Eigen::Matrix3d>> cov_matrices;
 };
 
+struct system_poses{
+    std::vector<cv::Mat> relative_poses;
+    std::vector<cv::Mat> global_poses;
+};
 
 class FramePair{
     /*
@@ -85,6 +89,10 @@ class FramePair{
         // Ransac object for culling outliers
         Ransac *pointRefine;
 
+        // Optimized Rot and trans
+        Eigen::Vector3d t_optim;
+        Eigen::Matrix3d R_optim;
+
         // Line Sampler in 2D
         void SampleIndices(const Eigen::MatrixXi& lines, std::vector<points2d>& sampled_lines_2d);
 
@@ -101,6 +109,5 @@ class FramePair{
 
         // ctor which populates members inside
         FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& rgb_image2, cv::Mat& depth_image2);
-
         
 };

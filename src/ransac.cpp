@@ -45,9 +45,13 @@ Eigen::Matrix3Xd Ransac::removeOutlierPoints(const Eigen::Matrix3Xd& linepoints,
         auto ptr_to_inlier_indices = std::make_shared<std::vector<int>>();
 
         // re-generate i and j randomly until they are not equal
-        int i = distribution(generator), j = distribution(generator);
+        int i = distribution(generator), j = distribution(generator), trial_num=0;
         while(i == j){
             i = distribution(generator), j = distribution(generator);
+            if (trial_num++ > 100){
+                cout << "Tried 100 times to generate two unique indices but coudln't find them" << endl;
+                cout << "Number of points in this line: " << linepoints.cols() << endl;
+            }
         }
         
         Eigen::Matrix3Xd support_points(3, linepoints.cols());
@@ -129,7 +133,7 @@ std::vector<int> Ransac::ransac3D(const std::vector<points3d>& optLines1, const 
         {
             // if (!((size == i) || (size == j)))
             //     continue;
-            std::cout << "Indices " << i << " " << j << " " << size << "\n";
+            // std::cout << "Indices " << i << " " << j << " " << size << "\n";
             optim::LineData l(optLines1[size].leftCols(1), optLines1[size].rightCols(1));
             optim::LineData l_prime(optLines2[size].leftCols(1), optLines2[size].rightCols(1));
 
@@ -140,7 +144,7 @@ std::vector<int> Ransac::ransac3D(const std::vector<points3d>& optLines1, const 
             double error = optim::computeRtError(Rot, T, l.A, l.B, l_prime.A, l_prime.B);
         
 
-            std::cout << "Error is = " << error << std::endl;
+            // std::cout << "Error is = " << error << std::endl;
             if (error < 0.5)
             {
                 // std::cout << "Rotation = \n" << Rot << "\n";
@@ -157,16 +161,16 @@ std::vector<int> Ransac::ransac3D(const std::vector<points3d>& optLines1, const 
         }
     }
     int inp;
-    std::cout << "Number of possible inliers " << optLines1.size() << std::endl;
-    std::cout << "Number of best Inliers " << best_num_inliers << std::endl;
-    std::cout << "Best R " << R_best << std::endl;
-    std::cout << "Best T " << t_best << std::endl;
-    std::cin >> inp;
+    // std::cout << "Number of possible inliers " << optLines1.size() << std::endl;
+    // std::cout << "Number of best Inliers " << best_num_inliers << std::endl;
+    // std::cout << "Best R " << R_best << std::endl;
+    // std::cout << "Best T " << t_best << std::endl;
+    // std::cin >> inp;
     std::vector<int> result;
     for(auto i : *ptr_to_best_inlier_indices)
         result.push_back(i);
 
-    std::cout << "Check 8" << std::endl;
+    // std::cout << "Check 8" << std::endl;
     return result;
     
 }

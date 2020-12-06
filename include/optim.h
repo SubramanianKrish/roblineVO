@@ -75,6 +75,7 @@ namespace optim
 
     void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
                         const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
-                        const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov);
+                        const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov,
+                        const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov, Eigen::Matrix3d& R_optim, Eigen::Vector3d& t_optim);
 
 }

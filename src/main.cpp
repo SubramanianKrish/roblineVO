@@ -37,11 +37,20 @@ int main(int argc, char* argv[])
   string synched_file = "synched_data.txt";
 
   string window_name = "ROBust LINE Visual Odometry";;
-  viewer* robline_viewer = new viewer(window_name);
+  struct system_poses *robline = new struct system_poses;
+  
+  // ugly, bad, very very bad - fix later [Why? Don't want vector to be empty. So populate here instead of first image]
+  cv::Mat world_pose = cv::Mat::eye(4, 4, CV_64F);
+  robline->relative_poses.push_back(world_pose);
+  robline->global_poses.push_back(world_pose);
+
+  viewer* robline_viewer = new viewer(window_name, robline);
+  
   std::thread render_thread(&viewer::run, robline_viewer);
 
   string image_pair_path, rgb_path, depth_path, rgb_time, depth_time;
   ifstream infile(data_dir + synched_file);
+
 
   bool isFirst = true;
   cv::Mat previous_rgb, previous_depth;
@@ -66,21 +75,40 @@ int main(int argc, char* argv[])
     
     else
     { 
+      cout << "Starting pair with im2_rgb: " << data_dir + rgb_path << endl;
       // Detect lines, match lines between frames, sample 2d line, reproject to 3d, remove outliers
       FramePair* fpair = new FramePair(previous_rgb, previous_depth, rgb_img, depth_img);
       // pairs.push_back(fpair);
+      
+      cout << "Frame pair has been successfully created" << endl;
 
       utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
       utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
       utils::DisplayImage(fpair->rgb_image1);
+
+      cout << "Have asked the 2d sampled drawing function" << endl;
+
+      // Update system poses
+      cv::Mat current_camera_pose = utils::MakeCameraPose(fpair->R_optim, fpair->t_optim);
+
+      // Lock viewer mtx
+      std::unique_lock<std::mutex> curPoseLock(robline_viewer->viewerPosesMtx);
+      robline->relative_poses.push_back(current_camera_pose);
+      robline->global_poses.push_back(robline->global_poses.back()*current_camera_pose);
+      curPoseLock.unlock();
+      // Unlock viewer mtx
+
       // Update the current vieweing frame
       robline_viewer->updateCurrentFrame(fpair);
 
-      cv::waitKey(0);
+      cout << "Updated the viewer content!" << endl;
+
+      cv::waitKey(10);
       
       // Update previous frame
       previous_rgb = rgb_img;
       previous_depth = depth_img;
+      cout << "updated prev images" << endl;
     }
   }
 

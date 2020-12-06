@@ -4,8 +4,10 @@
 
 #include <unistd.h>
 #include <iostream>
+#include <opencv2/core/eigen.hpp>
 
-viewer::viewer(const string& window_name) : window_name(window_name), current_frame(NULL), stopViewer(false) {
+viewer::viewer(const string& window_name, struct system_poses* ptr_to_poses) : window_name(window_name), current_frame(NULL), 
+                                                                               camera_poses(ptr_to_poses), stopViewer(false) {
     // create a window and bind its context to the main thread
     pangolin::CreateWindowAndBind(window_name, 640, 480);
 
@@ -37,7 +39,8 @@ void viewer::run(){
         d_cam.Activate(s_cam);
 
         utils::DrawCoordinates();
-
+    
+        
         // CRITICAL SECTION
         std::unique_lock<std::mutex> curFrameLock(viewerVarsMtx);
 
@@ -49,10 +52,18 @@ void viewer::run(){
             // utils::DrawSampledLine3D(current_frame->optimized_lines_im1.back(), {0.0, 1.0, 0.0}, 3);
             // utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[0], {1.0, 1.0, 0.0}, 3);
             // utils::DrawSampledLine3D(current_frame->rsac_points_3d_im1[1], {0.0, 1.0, 0.0}, 3);
-
         }
         
         curFrameLock.unlock();
+
+        std::unique_lock<std::mutex> curPoseLock(viewerPosesMtx);
+
+        if(camera_poses != NULL and camera_poses->global_poses.size()!=0){
+            for(auto& current_camera_pose: camera_poses->global_poses)
+                utils::DrawSingleCamera(current_camera_pose);
+        }
+
+        curPoseLock.unlock();
 
         // Swap frames and Process Events
         pangolin::FinishFrame();

@@ -345,12 +345,13 @@ namespace optim{
 
     void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
                           const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
-                          const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov)
+                          const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov,
+                          Eigen::Matrix3d& R_optim, Eigen::Vector3d& t_optim)
     {
         const int n_params = 6;                    // rotation + translation parameters
         int       n_meas = 4*matches.size();  // each match has a 4 part residual
         
-        const int n_iters = 10;
+        const int n_iters = 1000;
 
         double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
         
@@ -380,11 +381,33 @@ namespace optim{
         line_data.l2_cov  = &im2_line_cov;
         line_data.matches = &matches;
 
+        // Check pre optimization error
+        double *err = new double[n_meas];
+        computeRotTransResidual(optim_params, err, n_params, n_meas, (void*)&line_data);
+        double net_error = 0;
+        for (int i=0; i < n_meas; ++i) net_error += err[i];
+        cout << "Error before optimization: " << net_error << endl;
+
+
         // Run Levenberg-Marquardt
         int ret = dlevmar_dif(computeRotTransResidual, optim_params, optim_meas, n_params, n_meas,
                               n_iters, opts, info, NULL, NULL, (void*)&line_data);
-        delete[] optim_params;
-        delete[] optim_meas;
+        
+        // Check post optimization error
+        computeRotTransResidual(optim_params, err, n_params, n_meas, (void*)&line_data);
+        net_error = 0;
+        for (int i=0; i < n_meas; ++i) net_error += err[i];
+        cout << "Error after optimization: " << net_error << endl;
+
+        // Unpack rotation and translation
+        Eigen::Vector3d rot_vec;
+        rot_vec << optim_params[0], optim_params[1], optim_params[2];
+        t_optim << optim_params[3], optim_params[4], optim_params[5];
+        Eigen::AngleAxisd rotation_rodriguez(rot_vec.norm(), rot_vec.normalized());
+        R_optim = rotation_rodriguez.toRotationMatrix();
+        cout << "R after optimization: \n" << R_optim << endl;
+        cout << "t after optimization: \n" << t_optim << endl;
+
     }
     
     double computeDistError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& X, 

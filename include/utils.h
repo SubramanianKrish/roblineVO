@@ -43,7 +43,7 @@ namespace utils{
     void DrawLines3D(const std::vector<std::vector<cv::Point3d>>& lines);
     
     // Draw camera using a rectangular pyramid
-    void DrawSingleCamera(const cv::Mat& camera_pose, const float& w=1.0, const float& h_ratio=0.75, const float& z_ratio=0.6);
+    void DrawSingleCamera(const cv::Mat& camera_pose, const float& w=0.1, const float& h_ratio=0.75, const float& z_ratio=0.6);
 
     // Draw points in 3D
     // <TODO> Add default color information if no color is passed
@@ -57,5 +57,8 @@ namespace utils{
 
     // This draws the world coordinate frame at the world origin
     void DrawCoordinates();
+
+    // Helper to make 4d transformation matrix from R and t
+    cv::Mat MakeCameraPose(const Eigen::Matrix3d& R, const Eigen::Vector3d& t);
 
 }

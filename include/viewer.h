@@ -18,7 +18,7 @@ Changelog:
 class viewer{
     public:
         // constructor for the viewer
-        viewer(const std::string& window_name);
+        viewer(const std::string& window_name, struct system_poses* ptr_to_poses);
 
         // main render loop
         void run();
@@ -33,10 +33,16 @@ class viewer{
 
         // Mutex to guard data that needs to be plotted (current_frame)
         std::mutex viewerVarsMtx;
+
+        // Mutex to guard the poses data
+        std::mutex viewerPosesMtx;
         
     private:
         // Pointer to frame whose data we want to plot
         FramePair* current_frame;
+
+        // Pointer to the system of poses
+        struct system_poses* camera_poses;
 
         // To close viewer at end of processing
         bool stopViewer;
