@@ -140,9 +140,9 @@ std::vector<int> Ransac::ransac3D(const std::vector<points3d>& optLines1, const 
             double error = optim::computeRtError(Rot, T, l.A, l.B, l_prime.A, l_prime.B);
         
 
-            if (error < 0.05)
+            std::cout << "Error is = " << error << std::endl;
+            if (error < 0.5)
             {
-                std::cout << "Error is = " << error << std::endl;
                 // std::cout << "Rotation = \n" << Rot << "\n";
                 // std::cout << "Translation = \n" << T << "\n";
                 inliers++;
