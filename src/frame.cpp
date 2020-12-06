@@ -271,7 +271,9 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     std::cout << "Starting Im1" << std::endl;
     int Inp;
 
-    std::vector<Eigen::Matrix3d> line1_endPt_covs, line2_endPt_covs;
+    std::vector<std::vector<Eigen::Matrix3d>> line1_endPt_covs, line2_endPt_covs;
+
+
 
     for(int i = 0; i < rsac_points_3d_im1.size(); i++){
     // std::cout << rsac_points_3d_im1[i].cols() << " " << im1_data.cov_matrices[i].size() << std::endl;
@@ -279,6 +281,7 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     optimized_lines_im1.push_back(optimized_line1);
     // std::cin >> Inp;
     }
+    std::cout << line1_endPt_covs[0][0] << " \n " << line1_endPt_covs[0][1] << std::endl;
 
     std::cout << "Starting Im2" << std::endl;
     for(int i = 0; i < rsac_points_3d_im2.size(); i++){
@@ -287,10 +290,22 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     }
     std::cout << "Matrix Size" << line1_endPt_covs.size() << " " << line2_endPt_covs.size() << std::endl;
 
+    std::ofstream file("test.txt");
+    for (int i = 0; i < line1_endPt_covs.size(); i++)
+    {
+        if (file.is_open())
+        {
+            // MatrixXf m = MatrixXf::Random(30,3);
+            file << "Here is the matrix m:\n" << line1_endPt_covs[i][0] << "\n \n" << line1_endPt_covs[i][1] << "\n \n";
+            // file << "m" << '\n' <<  colm(m) << '\n';
+        }
+    }
+    file.close();
+    // std::cin >> inp;
 
+    Eigen::Vector3d t_best;
+    Eigen::Matrix3d R_best;
+    std::vector<int> inlier_indices = pointRefine->ransac3D(optimized_lines_im1, optimized_lines_im2, line1_endPt_covs, line2_endPt_covs, R_best, t_best);
 
+    // std::cout << inlier_indices[0] << std::endl;
 }
-
-    // points3d FramePair::OptimizeFrames(){
-        
-    // }
