@@ -296,4 +296,8 @@ FramePair::FramePair(const cv::Mat& rgb_image1, cv::Mat& depth_image1, cv::Mat& 
     optim::optimizeRotTrans(R_best, t_best, optimized_lines_im1, optimized_lines_im2, inlier_indices,
                             line1_endPt_covs, line2_endPt_covs, R_optim, t_optim);
     cout << "I have come out of optimization" << endl;
+    
+    // get Motion12 from Motion21
+    R_optim.transposeInPlace();
+    t_optim = -R_optim*t_optim;
 }
