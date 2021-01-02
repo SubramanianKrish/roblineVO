@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
       
       cout << "Frame pair has been successfully created" << endl;
 
-      // utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
+      utils::DrawSampledLines2D(fpair->rgb_image1, fpair->sampled_lines_2d_im1);
       // utils::DrawSampledLines2D(fpair->depth_image1, fpair->sampled_lines_2d_im1);
       utils::DisplayImage(fpair->rgb_image1);
 
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 
       cout << "Updated the viewer content!" << endl;
 
-      cv::waitKey(10);
+      cv::waitKey(0);
       
       // Update previous frame
       previous_rgb = rgb_img;
