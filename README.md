@@ -63,3 +63,6 @@ If you get librealsense2.so is missing for pangolin, clear build and rebuild Pan
 > $ cmake ..  
 > $ make  
 > $ sudo make install  
+
+### Camera poses estimated for XYZ FR1 TUM data
+![Demo run](./docs/full-run.gif)

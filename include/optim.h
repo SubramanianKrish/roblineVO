@@ -18,22 +18,64 @@
 namespace optim
 {
 
-struct RootInvCov{
-    int idx1, idx2;
-    std::vector<Eigen::Matrix3d> cov_matrices;
-};
+    class LineData{
+    public:
+        Eigen::Vector3d A, B, u, d;
+        
+        LineData(Eigen::Vector3d startPoint, Eigen::Vector3d endPoint): A(startPoint), B(endPoint){
+            Eigen::Vector3d l = B - A;
+            Eigen::Vector3d m = (A + B)/2;
 
-void compute_residual(double *points, double *error, int m, int n, void *data);
+            u = l/l.norm();
+            d = (l.cross(m))/l.norm();
+        }
+    };
 
-points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<Eigen::Matrix3d>& endPt_covs, int line_idx1, int line_idx2);
+    struct OptimizedLinesWithCov{
+        const std::vector<Eigen::Matrix3Xd> *l1, *l2;
+        const std::vector<std::vector<Eigen::Matrix3d>> *l1_cov, *l2_cov;
+        const std::vector<int> *matches;
+    };
+    
+    struct RootInvCov{
+        int idx1, idx2;
+        std::vector<Eigen::Matrix3d> cov_matrices;
+    };
 
-double m_dist(const Eigen::Vector3d& X, const Eigen::Matrix3d& sigma_x, const Eigen::Vector3d& A, const Eigen::Vector3d& B);
+    void compute_residual(double *points, double *error, int m, int n, void *data);
 
-double computeRtError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, 
-                      const Eigen::Vector3d& A1, const Eigen::Vector3d& B1,
-                      const Eigen::Matrix3d& cov_A1, const Eigen::Matrix3d& cov_B1,
-                      const Eigen::Vector3d& A2, const Eigen::Vector3d& B2,
-                      const Eigen::Matrix3d& cov_A2, const Eigen::Matrix3d& cov_B2
-                      );
+    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<std::vector<Eigen::Matrix3d>>& endPt_covs, int line_idx1, int line_idx2);
+
+    double m_dist(const Eigen::Vector3d& X, const Eigen::Matrix3d& sigma_x, const Eigen::Vector3d& A, const Eigen::Vector3d& B);
+
+    double computeRtError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, 
+                        const Eigen::Vector3d& A1, const Eigen::Vector3d& B1,
+                        const Eigen::Matrix3d& cov_A1, const Eigen::Matrix3d& cov_B1,
+                        const Eigen::Vector3d& A2, const Eigen::Vector3d& B2,
+                        const Eigen::Matrix3d& cov_A2, const Eigen::Matrix3d& cov_B2
+                        );
+
+
+    // Get anti-symmetric matrix given a vector
+    Eigen::Matrix3d GetCrossMatrix(const Eigen::Vector3d& vec);
+
+    // Computing rotation matrix as per the reference paper
+    Eigen::Matrix3d ComputeRotationMatrix(const LineData& l1, const LineData& l1_prime, const LineData& l2, const LineData& l2_prime);
+
+    // Computing translation as per the reference paper
+    Eigen::Vector3d ComputeTranslation(std::vector<LineData>& im1_lines, std::vector<LineData>& im2_lines, Eigen::Matrix3d& R);
+
+    double computeRtError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& A1, 
+                            const Eigen::Vector3d& B1, const Eigen::Vector3d& A2, const Eigen::Vector3d& B2);
+
+    double computeDistError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& X, 
+                            const Eigen::Vector3d& A, const Eigen::Vector3d& B);
+
+    void computeRotTransResidual(double *params, double *residuals, int n_params, int n_meas, void *data);
+
+    void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
+                        const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
+                        const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov,
+                        const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov, Eigen::Matrix3d& R_optim, Eigen::Vector3d& t_optim);
 
 }

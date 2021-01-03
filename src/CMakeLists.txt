@@ -87,5 +87,8 @@ target_link_libraries(main PUBLIC levmar ${PROJECT_NAME} )
 # add_executable(levmar_test ${CMAKE_CURRENT_SOURCE_DIR}/levmar_test.cpp)
 target_link_libraries(main PUBLIC ${PROJECT_NAME} )
 
-# add_executable(test_ransac ${CMAKE_CURRENT_SOURCE_DIR}/test_ransac.cpp)
-# target_link_libraries(test_ransac PUBLIC ${PROJECT_NAME} )
+add_executable(test_viewer ${CMAKE_CURRENT_SOURCE_DIR}/test_viewer.cpp)
+target_link_libraries(test_viewer PUBLIC ${PROJECT_NAME} )
+
+add_executable(test_rotation ${CMAKE_CURRENT_SOURCE_DIR}/test_rotation.cpp)
+target_link_libraries(test_rotation PUBLIC ${PROJECT_NAME} )

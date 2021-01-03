@@ -120,7 +120,7 @@ namespace utils{
         // Note: gl uses column major representation for transformation matrices.
         // Hence we're using the mulTransposeMatrix version
         glPushMatrix();
-        glMultTransposeMatrixf(camera_pose.ptr<GLfloat>(0));
+        glMultMatrixd(camera_pose.ptr<GLdouble>(0));
 
         glBegin(GL_LINES);
         glVertex3f(0,0,0);
@@ -196,4 +196,13 @@ namespace utils{
     
     }
 
+    cv::Mat MakeCameraPose(const Eigen::Matrix3d& R, const Eigen::Vector3d& t){
+        Eigen::Matrix4d pose; pose.setIdentity();
+        
+        pose.block<3,3>(0,0) = R; 
+        pose.block<3,1>(0,3) = t;
+        
+        cv::Mat camera_pose(4,4,CV_64F, pose.data());
+        return camera_pose.clone();
+    }
 }

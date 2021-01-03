@@ -1,5 +1,7 @@
-#include "optim.h"
+#include <Eigen/Geometry>
 
+#include "optim.h"
+#include <fstream>
 namespace optim{
 
     void compute_residual(double *points, double *error, int m, int n, void *data){
@@ -52,7 +54,7 @@ namespace optim{
 
     }
 
-    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<Eigen::Matrix3d>& endPt_covs, int line_idx1, int line_idx2){
+    points3d nonlinOptimize(points3d& line3D, std::vector<Eigen::Matrix3d>& inv_cov_one_line, std::vector<Eigen::Matrix3d>& covariance_matrices, std::vector<std::vector<Eigen::Matrix3d>>& endPt_covs, int line_idx1, int line_idx2){
         // std::cout << "Check pt 1" << std::endl;
         std::vector<double> param_vector;
         std::vector<double> ref_vector;
@@ -116,8 +118,8 @@ namespace optim{
         double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
         
         opts[0] = LM_INIT_MU; //
-        opts[1] = 1E-15; // gradient threshold, original 1e-15
-        opts[2] = 1E-50; // relative para change threshold? original 1e-50
+        opts[1] = 1E-10; // gradient threshold, original 1e-15
+        opts[2] = 1E-20; // relative para change threshold? original 1e-50
         opts[3] = 1E-20; // error threshold (below it, stop)
         opts[4] = LM_DIFF_DELTA;
 
@@ -220,17 +222,42 @@ namespace optim{
                 col = col + 3;
             }
         }
-
+        int inp;
         int size = covariance_matrices.size();
-        Eigen::MatrixXd temp(3*size, 3*size);
+        Eigen::MatrixXd temp = Eigen::MatrixXd::Zero(3*size, 3*size);
+        // Eigen::MatrixXd temp2 = Eigen::MatrixXd::Zero(3*size, 3*size);
         for (int i = 0; i < size; i++)
         {
-            temp.block(3*i, 3*i, 3, 3) = covariance_matrices[i];
+            temp.block(3*i, 3*i, 3, 3) = inv_cov_one_line[i].transpose()*inv_cov_one_line[i];
+            // temp2.block(3*i, 3*i, 3, 3) = covariance_matrices[i];
+            // if (i == 0)
+            // {
+            //     std::cout << numPara << std::endl;
+            //     std::cout << "Inverse cov \n" << inv_cov_one_line[i].transpose()*inv_cov_one_line[i] << "\n" << "Cov matrix \n" << covariance_matrices[i] << std::endl;
+                
+            //     std::cout << Jac.bottomRightCorner(3,3) << std::endl;
+            //     // for(long int k = 0; k < 100000000000; k++)
+            //     //     continue;
+            // }
         }
+        // std::ofstream file("test.txt");
+        // if (file.is_open())
+        // {
+        //     // MatrixXf m = MatrixXf::Random(30,3);
+        //     file << "Here is the matrix m:\n" << temp*temp2 << '\n';
+        //     // file << "m" << '\n' <<  colm(m) << '\n';
+        // }
+        // file.close();
+        // std::cin >> inp;
 
-        Eigen::MatrixXd estimated_cov = Jac*temp.inverse()*Jac.transpose();
-        endPt_covs.push_back(estimated_cov.topLeftCorner(3,3));
-        endPt_covs.push_back(estimated_cov.bottomRightCorner(3,3));
+        Eigen::MatrixXd estimated_cov = (Jac*temp*Jac.transpose()).inverse();
+        
+        std::vector<Eigen::Matrix3d> temp_vector;
+        temp_vector.push_back(estimated_cov.topLeftCorner(3,3));
+        temp_vector.push_back(estimated_cov.bottomRightCorner(3,3));
+
+        endPt_covs.push_back(temp_vector);
+        temp_vector.clear();
         // std::cout << Jac << std::endl;
         delete[] para;
         delete[] ref;
@@ -273,8 +300,195 @@ namespace optim{
         r[1] = m_dist(R.transpose()*A2 - R.transpose()*t, R.transpose()*cov_A2*R, A1, B1);
         r[2] = m_dist(R*B1+t, R*cov_B1*(R.transpose()), A2, B2);
         r[3] = m_dist(R.transpose()*B2 - R.transpose()*t, R.transpose()*cov_B2*R, A1, B1);
-
+        // std::cout << r[0]*r[0] << " " << r[1]*r[1] << " " << r[2]*r[2] << " " << r[3]*r[3] << "\n";
         return r[0]*r[0] + r[1]*r[1] + r[2]*r[2] + r[3]*r[3];
     }
+
+    void computeRotTransResidual(double *params, double *residuals, int n_params, int n_meas, void *data)
+    {
+        // Unpack parameters into rotation and translation
+        Eigen::Vector3d rot_vec, t;
+        rot_vec << params[0], params[1], params[2];
+        t       << params[3], params[4], params[5];
+        Eigen::AngleAxisd rotation_rodriguez(rot_vec.norm(), rot_vec.normalized());
+        Eigen::Matrix3d R = rotation_rodriguez.toRotationMatrix();
+
+        // Ensure data gets accessed by the right pointer
+        struct OptimizedLinesWithCov *line_data = (struct OptimizedLinesWithCov*)data;
+
+        int residual_index = 0;
+        // Iterate through matches to compute residual
+        for(int i: *(line_data->matches))
+        {
+            Eigen::Vector3d A1, B1, A2, B2;
+            Eigen::Matrix3d cov_A1, cov_B1, cov_A2, cov_B2;
+
+            A1 = (*(line_data->l1))[i].col(0);
+            B1 = (*(line_data->l1))[i].rightCols(1);
+            A2 = (*(line_data->l2))[i].col(0);
+            B2 = (*(line_data->l2))[i].rightCols(1);
+
+            cov_A1 = (*(line_data->l1_cov))[i][0];
+            cov_B1 = (*(line_data->l1_cov))[i][1];
+            cov_A2 = (*(line_data->l2_cov))[i][0];
+            cov_B2 = (*(line_data->l2_cov))[i][1];
+            
+            residuals[residual_index] = m_dist(R*A1 + t, R*cov_A1*(R.transpose()), A2, B2);
+            residuals[residual_index+1] = m_dist(R.transpose()*A2 - R.transpose()*t, R.transpose()*cov_A2*R, A1, B1);
+            residuals[residual_index+2] = m_dist(R*B1+t, R*cov_B1*(R.transpose()), A2, B2);
+            residuals[residual_index+3] = m_dist(R.transpose()*B2 - R.transpose()*t, R.transpose()*cov_B2*R, A1, B1);
+
+            residual_index += 4;
+        }   
+
+    }
+
+    void optimizeRotTrans(Eigen::Matrix3d& R, Eigen::Vector3d& t, const std::vector<points3d>& im1_lines,
+                          const std::vector<points3d>& im2_lines, const std::vector<int>& matches,
+                          const std::vector<std::vector<Eigen::Matrix3d>>& im1_line_cov, const std::vector<std::vector<Eigen::Matrix3d>>& im2_line_cov,
+                          Eigen::Matrix3d& R_optim, Eigen::Vector3d& t_optim)
+    {
+        const int n_params = 6;                    // rotation + translation parameters
+        int       n_meas = 4*matches.size();  // each match has a 4 part residual
+        
+        const int n_iters = 1000;
+
+        double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
+        
+        opts[0] = LM_INIT_MU; 
+        opts[1] = 1E-15; // gradient threshold, original 1e-15
+        opts[2] = 1E-50; // relative para change threshold? original 1e-50
+        opts[3] = 1E-20; // error threshold (below it, stop)
+        opts[4] = LM_DIFF_DELTA;
+
+        // Pack required information into data - start with converting rotation into rodrigues
+        Eigen::AngleAxisd rodrigues_rotation(R);
+        Eigen::Matrix<double, 6, 1> param_vector;
+        param_vector << rodrigues_rotation.angle()*rodrigues_rotation.axis(), t; // copies data over
+        double *optim_params = new double[6];
+        optim_params = param_vector.data();
+        
+        // populate target error i.e, zero
+        Eigen::Matrix<double, Eigen::Dynamic, 1> meas_vector = Eigen::MatrixXd::Zero(n_meas, 1);
+        double *optim_meas = new double[n_meas];
+        optim_meas = meas_vector.data();
+
+        // Pack in additional data
+        struct OptimizedLinesWithCov line_data;
+        line_data.l1      = &im1_lines;
+        line_data.l2      = &im2_lines;
+        line_data.l1_cov  = &im1_line_cov;
+        line_data.l2_cov  = &im2_line_cov;
+        line_data.matches = &matches;
+
+        // Check pre optimization error
+        double *err = new double[n_meas];
+        computeRotTransResidual(optim_params, err, n_params, n_meas, (void*)&line_data);
+        double net_error = 0;
+        for (int i=0; i < n_meas; ++i) net_error += err[i];
+        cout << "Error before optimization: " << net_error << endl;
+
+
+        // Run Levenberg-Marquardt
+        int ret = dlevmar_dif(computeRotTransResidual, optim_params, optim_meas, n_params, n_meas,
+                              n_iters, opts, info, NULL, NULL, (void*)&line_data);
+        
+        // Check post optimization error
+        computeRotTransResidual(optim_params, err, n_params, n_meas, (void*)&line_data);
+        net_error = 0;
+        for (int i=0; i < n_meas; ++i) net_error += err[i];
+        cout << "Error after optimization: " << net_error << endl;
+
+        // Unpack rotation and translation
+        Eigen::Vector3d rot_vec;
+        rot_vec << optim_params[0], optim_params[1], optim_params[2];
+        t_optim << optim_params[3], optim_params[4], optim_params[5];
+        Eigen::AngleAxisd rotation_rodriguez(rot_vec.norm(), rot_vec.normalized());
+        R_optim = rotation_rodriguez.toRotationMatrix();
+        cout << "R after optimization: \n" << R_optim << endl;
+        cout << "t after optimization: \n" << t_optim << endl;
+
+    }
     
+    double computeDistError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& X, 
+                            const Eigen::Vector3d& A, const Eigen::Vector3d& B)
+    {
+        Eigen::Vector3d transformed_X = R*X + t;
+        Eigen::Vector3d direction = B-A;
+        double dist = ((transformed_X - A).cross(direction)).norm()/direction.norm();
+        return dist;
+    }
+
+    double computeRtError(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, const Eigen::Vector3d& A1, 
+                            const Eigen::Vector3d& B1, const Eigen::Vector3d& A2, const Eigen::Vector3d& B2)
+    {
+        double err1 = computeDistError(R, t, A1, A2, B2);
+        double err2 = computeDistError(R, t, B1, A2, B2);
+
+        return (err1 + err2)*0.5;
+    }
+
+    Eigen::Matrix3d GetCrossMatrix(const Eigen::Vector3d& vec){
+        Eigen::Matrix3d vec_hat = (Eigen::Matrix<double,3,3>()<<  0, -vec(2), vec(1),
+                                                                vec(2), 0, -vec(0),
+                                                                -vec(1), vec(0), 0).finished();
+        return vec_hat;
+    }
+
+    Eigen::Matrix3d ComputeRotationMatrix(const LineData& l1, const LineData& l1_prime, const LineData& l2, const LineData& l2_prime){
+        Eigen::Matrix4d A1, A2;
+
+        // Constructing the matrix as per reference paper
+        A1(0,0) = 0;
+        A1.block(1,1,3,3) = optim::GetCrossMatrix(l1.u + l1_prime.u);
+        A1.bottomLeftCorner(3,1) = -(l1.u - l1_prime.u);
+        A1.topRightCorner(1,3) = (l1.u - l1_prime.u).transpose();
+
+        // std::cout << A1 << "\n" << std::endl;
+
+        A2(0,0) = 0;
+        A2.block(1, 1, 3, 3) = optim::GetCrossMatrix(l2.u + l2_prime.u);
+        A2.bottomLeftCorner(3,1) = -(l2.u - l2_prime.u);
+        A2.topRightCorner(1,3) = (l2.u - l2_prime.u).transpose();
+
+        // std::cout << A1.transpose()*A1 + A2.transpose()*A2 << "\n" << "\n";
+        // Computing the SVD of the sum of the matrices
+        Eigen::JacobiSVD<Eigen::Matrix4d> svd(A1.transpose()*A1 + A2.transpose()*A2, Eigen::ComputeFullU | Eigen::ComputeFullV);  
+        Eigen::Matrix4d U = svd.matrixU();
+        Eigen::Matrix4d V = svd.matrixV();
+
+        // std::cout << "Matrix Product \n" << U << "\n" << V << std::endl;
+        // int a;
+        // std::cin >> a;
+        Eigen::Vector4d temp_Q = V.col(3);
+
+        // Initialize a quaternion (not sure if the returned vector is (w, x, y, z), or (x, y, z, w))
+        Eigen::Quaterniond q(temp_Q(0), temp_Q(1), temp_Q(2), temp_Q(3));
+
+        // Converting quaternion to rotation matrix
+        Eigen::Matrix3d R = q.normalized().toRotationMatrix();
+
+        // std::cout << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << std::endl;
+        // std::cout << R << "\n" << std::endl;
+
+        return R;
+
+    }
+
+
+    Eigen::Vector3d ComputeTranslation(std::vector<LineData>& im1_lines, std::vector<LineData>& im2_lines, Eigen::Matrix3d& R){
+        Eigen::Matrix3d temp1 = Eigen::Matrix3d::Zero(3,3);
+        Eigen::Vector3d temp2 = Eigen::Vector3d::Zero(3);
+        for (int i = 0; i < im2_lines.size(); i++)
+        {
+            Eigen::Matrix3d u_prime_hat = optim::GetCrossMatrix(im2_lines[i].u);
+            temp1 = temp1 + u_prime_hat*u_prime_hat.transpose();
+
+            temp2 = temp2 + u_prime_hat.transpose()*(im2_lines[i].d - R*im1_lines[i].d);
+        
+        }
+        Eigen::Vector3d t = temp1.inverse()*temp2;
+
+        return t;
+    }
 }
